@@ -3,10 +3,10 @@ pragma solidity ^0.4.18;
 import './COTCoin.sol';
 import './WhiteList.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
-import 'zeppelin-solidity/contracts/crowdsale/CappedCrowdsale.sol';
+import 'zeppelin-solidity/contracts/crowdsale/Crowdsale.sol';
 import 'zeppelin-solidity/contracts/crowdsale/RefundableCrowdsale.sol';
 
-contract COTCoinCrowdsale is CappedCrowdsale, RefundableCrowdsale, WhiteList{
+contract COTCoinCrowdsale is Crowdsale, RefundableCrowdsale, WhiteList{
 	using SafeMath for uint256;
 
 	COTCoin public ownerMintableToken;
@@ -22,10 +22,9 @@ contract COTCoinCrowdsale is CappedCrowdsale, RefundableCrowdsale, WhiteList{
 	uint256 public preSale_endTime;
 	uint256 public publicSale_startTime;
 	uint256 public publicSale_endTime;
+	uint256 public lowest_weiAmount;
 
-
-	function COTCoinCrowdsale(uint256 _startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _endTime, uint256 _rate, uint256 _goal, uint256 _cap, address _wallet) public
-	    CappedCrowdsale(_cap)
+	function COTCoinCrowdsale(uint256 _startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _endTime, uint256 _rate, uint256 _goal, uint256 _cap, uint256 _lowest_weiAmount, address _wallet) public
 	    FinalizableCrowdsale()
 	    RefundableCrowdsale(_goal)
 	    Crowdsale(_startTime, _endTime, _rate, _wallet)
@@ -38,7 +37,7 @@ contract COTCoinCrowdsale is CappedCrowdsale, RefundableCrowdsale, WhiteList{
 	    preSale_endTime = _preSale_endTime;
 	    publicSale_startTime = _publicSale_startTime;
 	    publicSale_endTime = _endTime;
-
+	    lowest_weiAmount = _lowest_weiAmount;
 	}
 
 	function createTokenContract() internal returns(MintableToken){
@@ -75,12 +74,19 @@ contract COTCoinCrowdsale is CappedCrowdsale, RefundableCrowdsale, WhiteList{
 	    uint256 tokens = weiAmount.mul(rate);
 	    uint8 inWhitelist = checkList(beneficiary);
 
-	    require(inWhitelist == 1);
+	    //user should be in white list
+	    require( (inWhitelist == 1) || (inWhitelist == 2) );
 
-	    // calculate token amount to be created
-	    if((now >= preSale_startTime) && (now <= preSale_endTime)){
+	    if( (now >= preSale_startTime) && (now <= preSale_endTime) ){
+
+	    	//should be more than 25 eth
+	    	require(weiAmount >= lowest_weiAmount);
+
+	    	//user should be 1 in the whitelist when they want purchase token in pre-sale
+	    	require( inWhitelist == 1);
+
 	    	tokens = preSaleDiscount( weiAmount, tokens );
-    	}
+	    }
 
 	    // update state
 	    weiRaised = weiRaised.add(weiAmount);
@@ -100,7 +106,6 @@ contract COTCoinCrowdsale is CappedCrowdsale, RefundableCrowdsale, WhiteList{
 	*/
 	function preSaleDiscount(uint256 _weiAmount, uint256 basic_tokens)public pure returns (uint256){
 		uint256 discounted_token;
-		uint8 dcimal = 3;
 
 		if(_weiAmount < 25*10**18){
 			discounted_token = basic_tokens;
@@ -114,30 +119,9 @@ contract COTCoinCrowdsale is CappedCrowdsale, RefundableCrowdsale, WhiteList{
 			discounted_token = basic_tokens*10/7; //30% discount
 		}
 
-		discounted_token = round(discounted_token, dcimal);
+		discounted_token = discounted_token/10**18;
+		discounted_token = discounted_token*10**18;
 
 		return discounted_token;
 	}	
-
-  	/**
-	* @dev Function to round number
-	* @param _number The token amount
-	* @param _dcimal how many dcimal want to show
-	* @return A uint256 that indicates if the operation was successful.
-	*/
-	function round(uint256 _number, uint8 _dcimal)public pure returns (uint256){
-		uint256 _uint = 18 - _dcimal;
-		uint256 _tmp_number_value = _number/10**(_uint-1);
-		uint256 _number_value = _number/10**_uint;
-
-		uint256 quotient  = _tmp_number_value / 10;
-        uint256 remainder = _tmp_number_value - 10 * quotient;
-
-        if(remainder > 4){
-        	_number_value = _number_value + 1;
-        }
-
-		_number_value = _number_value*10**_uint;
-		return _number_value;
-	}
 }

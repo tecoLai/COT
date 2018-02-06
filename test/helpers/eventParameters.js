@@ -6,6 +6,7 @@ export const event_parameter = {
   totalSupply: function () { return 1000000000; },
   cap: function (val) { return val*10**18; },
   randomNum: function () { return (Math.random() * 10 + 1).toFixed(2); },
+  lowest_weiAmount: function () { return 1*10**18; }
 };
 
 

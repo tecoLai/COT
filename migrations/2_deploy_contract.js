@@ -31,6 +31,7 @@ module.exports = function(deployer, network, accounts){
 
 	const goal = 1*10**18;
 	const cap = 1000000000*10**18;
+	const lowest_weiAmount = 25*10**18;
 
-	deployer.deploy(COTCoinCrowdsale, preSalse_startTime, preSalse_endTime, publicSalse_startTime, publicSalse_endTime, rate, goal, cap, wallet);
+	deployer.deploy(COTCoinCrowdsale, preSalse_startTime, preSalse_endTime, publicSalse_startTime, publicSalse_endTime, rate, goal, cap, lowest_weiAmount, wallet);
 };

@@ -9,7 +9,6 @@ contract COTCoin is MintableToken{
 	string public constant name = 'CosplayToken';
 	string public constant symbol = 'COT';
 	uint8 public constant decimals = 18;
-	//uint256 public remain;
 
 	// overriding MintableToken#mint to　disable mint token function
 	// overriding MintableToken#mint トークンミント機能を隠し、ミント機能必要がない、契約オーナーからトークンを上げるから

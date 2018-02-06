@@ -26,6 +26,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
   const cap = event_parameter.cap(totalSupply);
   const randomNum = event_parameter.randomNum();
   const value = ether(randomNum);
+  const lowest_weiAmount = event_parameter.lowest_weiAmount();
 
   before(async function () {
     // Advance to the next block to correctly read time in the solidity "now" function interpreted by testrpc
@@ -41,16 +42,16 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     this.publicSales_endTime = event_period.publicSales_endTime(this.publicSales_startTime);
     this.afterPreSales_endTime = event_period.afterPreSales_endTime(this.preSales_endTime);
     this.afterEndTime = event_period.afterEndTime(this.publicSales_endTime);
-    this.crowdsale = await COTCoinCrowdsale.new(this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, rate, goal, cap, wallet);   
+    this.crowdsale = await COTCoinCrowdsale.new(this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, rate, goal, cap, lowest_weiAmount, wallet);   
     this.token_address = await this.crowdsale.token();
     //console.log(this.token_address);
     this.token = COTCoin.at(this.token_address);
   });
 
-  describe('upload whitelist file', function () {
+  describe('upload whitelist file for pre sale', function () {
     
-    it('can upload 10000 user address', async function () {
-      const num = 10000;
+    it('can upload 5000 user address', async function () {
+      const num = 5000;
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist_file = event_whitelist.generate(num);
       //console.log(whitelist_file);
@@ -163,10 +164,10 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
 
   });
 
-  describe('upload premium whitelist file', function () {
+  describe('upload whitelist file for public sale', function () {
     
-    it('can upload 10000 user address', async function () {
-      const num = 10000;
+    it('can upload 5000 user address', async function () {
+      const num = 5000;
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist_file = event_whitelist.generate(num);
       //console.log(whitelist_file);
@@ -178,7 +179,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       }
 
       for(var list_index = 0; list_index < new_list.length; list_index ++ ){
-        await this.crowdsale.importPremiumList(new_list[list_index]).should.be.fulfilled;  
+        await this.crowdsale.importPublicSaleList(new_list[list_index]).should.be.fulfilled;  
       }
       
       for(var i = 0; i < whitelist_file.length; i ++){
@@ -202,23 +203,23 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
         new_list.push(whitelist_file.slice(index,index+20));
       }
 
-      await this.crowdsale.importPremiumList(new_list[0]).should.be.fulfilled;
+      await this.crowdsale.importPublicSaleList(new_list[0]).should.be.fulfilled;
 
       await increaseTimeTo(this.preSales_startTime);
 
-      await this.crowdsale.importPremiumList(new_list[1]).should.be.fulfilled;
+      await this.crowdsale.importPublicSaleList(new_list[1]).should.be.fulfilled;
 
       await increaseTimeTo(this.afterPreSales_endTime);
 
-      await this.crowdsale.importPremiumList(new_list[2]).should.be.fulfilled;
+      await this.crowdsale.importPublicSaleList(new_list[2]).should.be.fulfilled;
 
       await increaseTimeTo(this.publicSales_startTime);
 
-      await this.crowdsale.importPremiumList(new_list[3]).should.be.fulfilled;
+      await this.crowdsale.importPublicSaleList(new_list[3]).should.be.fulfilled;
 
       await increaseTimeTo(this.afterEndTime);
 
-      await this.crowdsale.importPremiumList(new_list[4]).should.be.fulfilled;
+      await this.crowdsale.importPublicSaleList(new_list[4]).should.be.fulfilled;
       
       for(var i = 0; i < whitelist_file.length; i ++){
         //console.log('check ',whitelist_file[i]);
@@ -231,48 +232,42 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     
   });  
 
-  describe('accepting payments　for premium whitelist', function () {
+  describe('accepting payments　for public sale whitelist', function () {
 
-    it('owner can not buy token after pre sale-start even if owner is in premium whitelist', async function () {
+    it('owner can not buy token after pre sale-start even if owner is in public sale whitelist', async function () {
       await increaseTimeTo(this.preSales_startTime);
       const whitelist_have_owner = [owner, owner, purchaser,purchaser2];// add users and owner into whitelist
-      await this.crowdsale.importPremiumList(whitelist_have_owner);      
+      await this.crowdsale.importPublicSaleList(whitelist_have_owner);      
       await this.crowdsale.sendTransaction({ value: value, from: owner }).should.be.rejectedWith(EVMRevert);
       await this.crowdsale.buyTokens(owner, { value: value, from: owner }).should.be.rejectedWith(EVMRevert);
     });
 
-    it('owner can not buy token after public sale-start even if owner is in premium whitelist', async function () {
+    it('owner can not buy token after public sale-start even if owner is in public sale whitelist', async function () {
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist_have_owner = [owner, owner, purchaser,purchaser2];// add users and owner into whitelist
-      await this.crowdsale.importPremiumList(whitelist_have_owner);      
+      await this.crowdsale.importPublicSaleList(whitelist_have_owner);      
       await this.crowdsale.sendTransaction({ value: value, from: owner }).should.be.rejectedWith(EVMRevert);
       await this.crowdsale.buyTokens(owner, { value: value, from: owner }).should.be.rejectedWith(EVMRevert);
     });
 
-    it('should reject payments after pre sale-start if user not in premium whitelist', async function () {
+    it('should reject payments after pre sale-start if user is in public sale whitelist', async function () {
       await increaseTimeTo(this.preSales_startTime);
+      const whitelist = [ purchaser,purchaser2];// add users and owner into whitelist
+      await this.crowdsale.importPublicSaleList(whitelist);       
       await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
       await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
     });     
 
-    it('should reject payments after public sale-start if user not in premium whitelist', async function () {
+    it('should reject payments after public sale-start if user not in public sale whitelist', async function () {
       await increaseTimeTo(this.publicSales_startTime);
       await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
       await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
     });  
 
-    it('should accept payments after pre sale-start if user in premium whitelist', async function () {
-      await increaseTimeTo(this.preSales_startTime);
-      const whitelist = [purchaser,purchaser2];// add users into whitelist
-      await this.crowdsale.importPremiumList(whitelist);
-      await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.fulfilled;
-      await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.fulfilled;
-    });
-
-    it('should accept payments after public sale-start if user in premium whitelist', async function () {
+    it('should accept payments after public sale-start if user in public sale whitelist', async function () {
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist = [purchaser,purchaser2];// add users into whitelist
-      await this.crowdsale.importPremiumList(whitelist);
+      await this.crowdsale.importPublicSaleList(whitelist);
       await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.fulfilled;
       await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.fulfilled;
     });
