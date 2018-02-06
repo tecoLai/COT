@@ -57,7 +57,6 @@ App = {
     $(document).on('click', '#finish', App.handleFinish);
     $(document).on('click', '#balance-check', App.handleBalance);
     $(document).on('click', '#import-whiteList', App.handleImportWhiteList);
-    $(document).on('click', '#import-premiumWhiteList', App.handleImportPremiumWhiteList);
     $(document).on('click', '#check-whitelist', App.handleCheckWhiteList);
     $(document).on('click', '#check-history', App.handleCheckHistory);
     $(document).on('click', '#transferTokenButton', App.handleTransferToken);
@@ -177,7 +176,7 @@ App = {
       }
 
       var account = accounts[0];
-
+      console.log('account address ',account);
       App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
         COTCoinCrowdsaleInstance = instance;
 
@@ -216,7 +215,8 @@ App = {
       }
 
       var users = ["0xf17f52151ebef6c7334fad080c5704d77216b732","0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef"];
-
+      console.log('import address info');
+      console.log(users);
       App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
         WhiteListInstance = instance;
         console.log(users);
@@ -231,35 +231,6 @@ App = {
       });
     });    
   },  
-
-  handleImportPremiumWhiteList: function(event){
-    event.preventDefault();
-    console.log(' import premium whitelist');
-
-    var PremiumWhiteListInstance;
-
-    web3.eth.getAccounts(function(error, accounts) {
-      if (error) {
-        console.log(error);
-      }
-
-      var users = ["0x821aea9a577a9b44299b9c15c88cf3087f3b5544"];
-
-      App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-        PremiumWhiteListInstance = instance;
-        console.log(users);
-        return PremiumWhiteListInstance.importPremiumList(users);
-
-      }).then(function(result) {
-        console.log('import success');
-        console.log(users);
-
-      }).catch(function(err) {
-        console.log(err.message);
-      });
-    });    
-  },  
-
 
   handleCheckWhiteList: function(event){
     event.preventDefault();
