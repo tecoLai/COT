@@ -29,9 +29,7 @@ module.exports = function(deployer, network, accounts){
 	const rate = new web3.BigNumber(10000);　
 	const wallet = accounts[0]; //デプロイ用なアドレス設定
 
-	const goal = 1*10**18;
-	const cap = 1000000000*10**18;
 	const lowest_weiAmount = 25*10**18;
 
-	deployer.deploy(COTCoinCrowdsale, preSalse_startTime, preSalse_endTime, publicSalse_startTime, publicSalse_endTime, rate, goal, cap, lowest_weiAmount, wallet);
+	deployer.deploy(COTCoinCrowdsale, preSalse_startTime, preSalse_endTime, publicSalse_startTime, publicSalse_endTime, rate, lowest_weiAmount, wallet);
 };

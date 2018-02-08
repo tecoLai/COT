@@ -4,9 +4,9 @@ import './COTCoin.sol';
 import './WhiteList.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import 'zeppelin-solidity/contracts/crowdsale/Crowdsale.sol';
-import 'zeppelin-solidity/contracts/crowdsale/RefundableCrowdsale.sol';
+import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
 
-contract COTCoinCrowdsale is Crowdsale, RefundableCrowdsale, WhiteList{
+contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 	using SafeMath for uint256;
 
 	COTCoin public ownerMintableToken;
@@ -24,14 +24,11 @@ contract COTCoinCrowdsale is Crowdsale, RefundableCrowdsale, WhiteList{
 	uint256 public publicSale_endTime;
 	uint256 public lowest_weiAmount;
 
-	function COTCoinCrowdsale(uint256 _startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _endTime, uint256 _rate, uint256 _goal, uint256 _cap, uint256 _lowest_weiAmount, address _wallet) public
-	    FinalizableCrowdsale()
-	    RefundableCrowdsale(_goal)
+	function COTCoinCrowdsale(uint256 _startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _endTime, uint256 _rate, uint256 _lowest_weiAmount, address _wallet) public
 	    Crowdsale(_startTime, _endTime, _rate, _wallet)
 	{
 	    //As goal needs to be met for a successful crowdsale
 	    //the value needs to less or equal than a cap which is limit for accepted funds
-	    require(_goal <= _cap);
 	    ownerWallet = _wallet;
 	    preSale_startTime = _startTime;
 	    preSale_endTime = _preSale_endTime;
@@ -53,7 +50,7 @@ contract COTCoinCrowdsale is Crowdsale, RefundableCrowdsale, WhiteList{
 
 	// overriding Crowdsale#buyTokens to　send token to buyer, and don't need to mint token
 	// overriding Crowdsale#buyTokens,トークン上げる方法改修、新しいトークンミントじゃなくて、契約オーナーからトークンを上げる
-	function buyTokens(address beneficiary) public payable {
+	function buyTokens(address beneficiary) public whenNotPaused payable {
 
 		//only pre-salse period and public-sale period that can buy token
 		//トークンを購入する期間はpre-saleとpublic-saleだけ

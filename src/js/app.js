@@ -54,16 +54,49 @@ App = {
 
   bindEvents: function() {
     $(document).on('click', '#transferButton', App.handleTransfer);
-    $(document).on('click', '#finish', App.handleFinish);
-    $(document).on('click', '#balance-check', App.handleBalance);
+    $(document).on('click', '#pause', App.handlePause);
+    $(document).on('click', '#unpause', App.handleUnPause);
     $(document).on('click', '#import-whiteList', App.handleImportWhiteList);
+    $(document).on('click', '#import-publicSale-whiteList', App.handleImportPublicSaleWhiteList);
     $(document).on('click', '#check-whitelist', App.handleCheckWhiteList);
     $(document).on('click', '#check-history', App.handleCheckHistory);
     $(document).on('click', '#transferTokenButton', App.handleTransferToken);
-
-
-
   },
+
+  handlePause: function(event) {
+    event.preventDefault();
+    console.log('pausing sale');
+    var COTCoinCrowdsaleInstance;
+
+    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+      COTCoinCrowdsaleInstance = instance;
+      return COTCoinCrowdsaleInstance.pause();
+
+    }).then(function(result){
+      console.log('sale pause!');
+      console.log(result);
+    }).catch(function(err){
+      console.log(err.message);
+    });
+  },
+
+  handleUnPause: function(event) {
+    event.preventDefault();
+    console.log('starting sale');
+    var COTCoinCrowdsaleInstance;
+
+    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+      COTCoinCrowdsaleInstance = instance;
+      return COTCoinCrowdsaleInstance.unpause();
+
+    }).then(function(result){
+      console.log('sale start!');
+      console.log(result);
+    }).catch(function(err){
+      console.log(err.message);
+    });
+  },
+
   handleTransferToken: function(event) {
     event.preventDefault();
 
@@ -136,32 +169,6 @@ App = {
     });
   },
   
-  handleFinish: function(event){
-    event.preventDefault();
-    console.log('close fund');
-
-    var FinishInstance;
-
-    web3.eth.getAccounts(function(error, accounts) {
-      if (error) {
-        console.log(error);
-      }
-
-      var account = accounts[0];
-
-      App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-        FinishInstance = instance;
-        return FinishInstance.finalize()
-
-      }).then(function(result) {
-        alert('Colse Successful!');
-
-      }).catch(function(err) {
-        console.log(err.message);
-      });
-    });    
-  },
-
   handleBalance: function(event){
     event.preventDefault();
     console.log(' balance check');
@@ -205,7 +212,7 @@ App = {
 
   handleImportWhiteList: function(event){
     event.preventDefault();
-    console.log(' import whitelist');
+    console.log(' import pre sale whitelist');
 
     var WhiteListInstance;
 
@@ -231,6 +238,36 @@ App = {
       });
     });    
   },  
+
+  handleImportPublicSaleWhiteList: function(event){
+    event.preventDefault();
+    console.log(' import public sale whitelist');
+
+    var WhiteListInstance;
+
+    web3.eth.getAccounts(function(error, accounts) {
+      if (error) {
+        console.log(error);
+      }
+
+      var users = ["0x821aEa9a577a9b44299B9c15c88cf3087F3b5544","0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2"];
+      console.log('import address info');
+      console.log(users);
+      App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+        WhiteListInstance = instance;
+        console.log(users);
+        return WhiteListInstance.importPublicSaleList(users);
+
+      }).then(function(result) {
+        console.log('import success');
+        console.log(users);
+
+      }).catch(function(err) {
+        console.log(err.message);
+      });
+    });    
+  },  
+
 
   handleCheckWhiteList: function(event){
     event.preventDefault();

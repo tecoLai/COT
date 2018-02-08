@@ -21,10 +21,7 @@ const COTCoin = artifacts.require("./COTCoin.sol");
 contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3]) {
   const wallet = owner;
   const rate = event_parameter.rate();
-  const goalToken = event_parameter.goalToken();
-  const goal = event_parameter.goal(goalToken);
   const totalSupply = event_parameter.totalSupply();
-  const cap = event_parameter.cap(totalSupply);
   const randomNum = event_parameter.randomNum();
   const value = ether(randomNum);
   const lowest_weiAmount = event_parameter.lowest_weiAmount();
@@ -43,7 +40,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     this.publicSales_endTime = event_period.publicSales_endTime(this.publicSales_startTime);
     this.afterPreSales_endTime = event_period.afterPreSales_endTime(this.preSales_endTime);
     this.afterEndTime = event_period.afterEndTime(this.publicSales_endTime);
-    this.crowdsale = await COTCoinCrowdsale.new(this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, rate, goal, cap, lowest_weiAmount, wallet);   
+    this.crowdsale = await COTCoinCrowdsale.new(this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, rate, lowest_weiAmount, wallet);   
     this.token_address = await this.crowdsale.token();
     //console.log(this.token_address);
     this.token = COTCoin.at(this.token_address);
