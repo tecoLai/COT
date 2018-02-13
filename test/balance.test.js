@@ -186,4 +186,38 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     });
 
   });
+
+  describe('sale remain balance check', function () {
+  
+    it('should accept payment if amount of token that user bought is lower than remain amount of sale ', async function () {
+      const expect_remain_totalToken_data = await this.token.remainSaleSupply();
+      const expect_remain_totalToken = token(expect_remain_totalToken_data.toNumber(10));
+
+      await increaseTimeTo(this.publicSales_startTime);
+      const whitelist = [purchaser,purchaser2];// add users into whitelist
+      await this.crowdsale.importList(whitelist);
+
+      const value1 = ether(25);
+      await this.crowdsale.sendTransaction({ value: value1, from: purchaser }).should.be.fulfilled;
+      const totalToken_data3 = await this.token.balanceOf(purchaser);
+      const totalToken3 = token(totalToken_data3.toNumber(10));
+      
+      const value2 = ether(25);
+      await this.crowdsale.sendTransaction({ value: value2, from: purchaser2 }).should.be.fulfilled;
+      const totalToken_data4 = await this.token.balanceOf(purchaser2);
+      const totalToken4 = token(totalToken_data4.toNumber(10));
+
+      const remain_totalToken_data = await this.token.remainSaleSupply();
+      const remain_totalToken = token(remain_totalToken_data.toNumber(10));
+
+      /*
+      console.log(totalToken3);
+      console.log(totalToken4);
+      console.log(remain_totalToken);
+      console.log(expect_remain_totalToken);
+      */
+      expect_remain_totalToken.should.equal((totalToken3 + totalToken4 + remain_totalToken));
+    });
+
+  });
 });

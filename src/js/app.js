@@ -1,8 +1,11 @@
 App = {
   web3Provider: null,
   contracts: {},
-  
-  init: function() {
+  ownerAccount:"",
+
+  init: function(owner_account) {
+
+    App.ownerAccount = owner_account;
     return App.initWeb3();
   },
 
@@ -140,7 +143,6 @@ App = {
     event.preventDefault();
 
     var amount = $('#TTTransferAmount').val();
-    //var toAddress = $('#TTTransferAddress').val();
 
     console.log('Pay ' + amount + ' ether ');
 
@@ -169,47 +171,6 @@ App = {
     });
   },
   
-  handleBalance: function(event){
-    event.preventDefault();
-    console.log(' balance check');
-
-    var COTCoinCrowdsaleInstance;
-    var BalanceInstance;
-
-
-    web3.eth.getAccounts(function(error, accounts) {
-      if (error) {
-        console.log(error);
-      }
-
-      var account = accounts[0];
-      console.log('account address ',account);
-      App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-        COTCoinCrowdsaleInstance = instance;
-
-        COTCoinCrowdsaleInstance.token().then(function(addr){
-          tokenAddress = addr;
-          return tokenAddress;
-
-        }).then(function(tokenAddress_data){
-
-          var BalanceInstance;
-          BalanceInstance = App.contracts.COTCoin.at(tokenAddress_data);
-          return BalanceInstance.balanceOf(account);
-
-        }).then(function(result) {
-          console.log( web3.fromWei(result, "ether"));
-
-        }).catch(function(err) {
-          console.log(err.message);
-        });
-
-      }).catch(function(err){
-        console.log(err.message);
-      });
-    });    
-  },
-
   handleImportWhiteList: function(event){
     event.preventDefault();
     console.log(' import pre sale whitelist');
@@ -221,21 +182,51 @@ App = {
         console.log(error);
       }
 
-      var users = ["0xf17f52151ebef6c7334fad080c5704d77216b732","0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef"];
-      console.log('import address info');
-      console.log(users);
-      App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-        WhiteListInstance = instance;
-        console.log(users);
-        return WhiteListInstance.importList(users);
+/*
+      test user
+      var users = ["0xf17f52151ebef6c7334fad080c5704d77216b732",
+      "0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef",
+      "0x6330a553fc93768f612722bb8c2ec78ac90b3bbc",
+      "0x5aeda56215b167893e80b4fe645ba6d5bab767de"];
+*/
 
-      }).then(function(result) {
-        console.log('import success');
-        console.log(users);
+      var new_list = [];
+      var whitelistFile = $.trim($('#whitelistToUpload').val());
 
-      }).catch(function(err) {
-        console.log(err.message);
-      });
+      if(whitelistFile == ''){
+        alert('no content');
+      }else{
+
+        var whitelistFile_json = jQuery.parseJSON(whitelistFile);
+        
+        for(var json_index = 0; json_index < whitelistFile_json.length; json_index++){
+          new_list.push(whitelistFile_json[json_index]);
+        }
+        
+        var whitelist_list = [];
+        for(var index = 0; index < new_list.length; index+=100){
+          whitelist_list.push(new_list.slice(index,index+100));
+        }
+
+        console.log(whitelist_list);
+
+        App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+          WhiteListInstance = instance;
+
+          for(var list_index = 0; list_index < whitelist_list.length; list_index ++ ){
+            var importing_data = whitelist_list[list_index];
+            WhiteListInstance.importList(whitelist_list[list_index]).then(function(result){
+              console.log(result);
+            }).catch(function(err) {
+              console.log(err.message);
+            });
+          }  
+
+        }).catch(function(err) {
+          console.log(err.message);
+        });
+      }
+
     });    
   },  
 
@@ -250,21 +241,43 @@ App = {
         console.log(error);
       }
 
-      var users = ["0x821aEa9a577a9b44299B9c15c88cf3087F3b5544","0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2"];
-      console.log('import address info');
-      console.log(users);
-      App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-        WhiteListInstance = instance;
-        console.log(users);
-        return WhiteListInstance.importPublicSaleList(users);
+/*
+      test user
+      var users = ["0x821aEa9a577a9b44299B9c15c88cf3087F3b5544",
+      "0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2"];
+*/
 
-      }).then(function(result) {
-        console.log('import success');
-        console.log(users);
+      var new_list = [];
+      var publicSalewhitelistFile = $.trim($('#publicSalewhitelistToUpload').val());
+      if(publicSalewhitelistFile == ''){
+        alert('no content');
+      }else{
+        var publicSalewhitelistFile_whitelistFile_json = jQuery.parseJSON(publicSalewhitelistFile);
+        
+        for(var json_index = 0; json_index < publicSalewhitelistFile_whitelistFile_json.length; json_index++){
+          new_list.push(publicSalewhitelistFile_whitelistFile_json[json_index]);
+        }
+        
+        var publicSale_whitelist_list = [];
+        for(var index = 0; index < new_list.length; index+=100){
+          publicSale_whitelist_list.push(new_list.slice(index,index+100));
+        }
 
-      }).catch(function(err) {
-        console.log(err.message);
-      });
+        console.log(publicSale_whitelist_list);
+
+        App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+          WhiteListInstance = instance;
+
+          for(var list_index = 0; list_index < publicSale_whitelist_list.length; list_index ++ ){
+            var importing_data = publicSale_whitelist_list[list_index];
+            WhiteListInstance.importPublicSaleList(publicSale_whitelist_list[list_index]);
+          }  
+
+        }).catch(function(err) {
+          console.log(err.message);
+        });
+      }  
+
     });    
   },  
 
@@ -300,7 +313,7 @@ App = {
     event.preventDefault();
     
     var token_address = document.getElementById('tokenAddress').innerHTML;
-    console.log(' address history　', token_address);
+    console.log('contract address history　', token_address);
     var HistoryInstance;
       contractAddress = token_address;
       web3.eth.filter({
@@ -308,48 +321,62 @@ App = {
         fromBlock: 1,
         toBlock: 'latest'
       }).get(function (err, result) {
+        
+/*
+        web3.eth.getTransactionCount("0x9ad8eecf9a3d5949af816c0b2d4f34c635bf093f", function(error, result){
+          console.log('eth transaction count ');
+          console.log(result);
+        })
 
+        web3.eth.getTransactionCount(token_address, function(error, result){
+          console.log('give token count ');
+          console.log(result);
+        })
+*/
         for(var index = 0; index < result.length; index ++){
 
           //console.log(result[index]);
           //console.log(result[index].blockHash);
           //console.log(result[index].transactionHash);
 
+          $.when(
+            //transaction time get
+            web3.eth.getBlock(result[index].blockHash, function(error, result){
+                if(!error){
+                  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                  var timestamp = new Date(parseInt(result.timestamp)*1000);
+                  var month = months[timestamp.getMonth()];
+                  var date = timestamp.getDate();
+                  var hour = timestamp.getHours();
+                  var min = timestamp.getMinutes();
+                  var sec = timestamp.getSeconds();
+                  var time = date + ' ' + month + ' ' +  hour + ':' + min + ':' + sec ;
+                  //console.log(result);
+                  console.log(time);
+                }
+                else{
+                    console.error(error);
+                }    
+            })
+            ).then(function(){
 
-          //transaction time get
-          web3.eth.getBlock(result[index].blockHash, function(error, result){
-              if(!error){
-                var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                var timestamp = new Date(parseInt(result.timestamp)*1000);
-                var month = months[timestamp.getMonth()];
-                var date = timestamp.getDate();
-                var hour = timestamp.getHours();
-                var min = timestamp.getMinutes();
-                var sec = timestamp.getSeconds();
-                var time = date + ' ' + month + ' ' +  hour + ':' + min + ':' + sec ;
-                //console.log(result);
-                console.log(time);
-              }
-              else{
-                  console.error(error);
-              }    
-          })
+              //buyer address, eth get  
+              web3.eth.getTransaction(result[index].transactionHash, function(error, result){
+                if(!error){
+                  var from = result.from;
+                  var to = result.to;
+                  var value = result.value;
+                  value = value.toString(10);
+                  var a =  web3.fromWei(value, "ether");
+                  var receipt = 'from ' + from + ' to ' + to + '/ send ' + a;
+                  console.log(receipt);
+                }
+                else{
+                    console.error(error);
+                }
+              })
 
-          //buyer address, eth get  
-          web3.eth.getTransaction(result[index].transactionHash, function(error, result){
-            if(!error){
-              var from = result.from;
-              var to = result.to;
-              var value = result.value;
-              value = value.toString(10);
-              var a =  web3.fromWei(value, "ether");
-              var receipt = 'from' + from + ' to ' + to + '/ send ' + a;
-              console.log(receipt);
-            }
-            else{
-                console.error(error);
-            }
-          })
+            })
         }
       })
   },  
@@ -365,7 +392,7 @@ App = {
       }
 
       var account = accounts[0];
-       console.log('Getting accounts...');
+      console.log('Getting accounts...');
       console.log(accounts);
       App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
         COTCoinCrowdsaleInstance = instance;
@@ -380,6 +407,8 @@ App = {
             console.log('Getting balances...');
             var COTCoinInstance;
             COTCoinInstance = App.contracts.COTCoin.at(tokenAddress_data);
+
+            //get user balance
             COTCoinInstance.balanceOf(account).then(function(balance_data){
               balance = COTCoinInstance.totalSupply();
               console.log(balance);
@@ -391,7 +420,29 @@ App = {
               console.log('balance: '+result);
               balance =  web3.fromWei(result, "ether")
               $('#TTBalance').text(balance);
+            }).catch(function(err) {
+              console.log(err.message);
+            });
 
+            //get owner remain balance
+            COTCoinInstance.balanceOf(App.ownerAccount).then(function(balance_data){
+              balance = COTCoinInstance.totalSupply();
+              console.log(balance);
+              console.log('balance_data:');
+              console.log(balance_data);
+              return balance_data.toString(10);
+
+            }).then(function(result){
+              console.log('balance: '+result);
+              balance =  web3.fromWei(result, "ether")
+              $('#remainBalance').text(balance);
+            }).catch(function(err) {
+              console.log(err.message);
+            });
+
+            //get sale remain balance
+            COTCoinInstance.remainSaleSupply().then(function(balance_data){
+              $('#saleRemainBalance').text(web3.fromWei(balance_data.toString(10), "ether"));
             }).catch(function(err) {
               console.log(err.message);
             });
@@ -411,6 +462,7 @@ App = {
 
 $(function() {
   $(window).load(function() {
-    App.init();
+    var ownerAccount = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57";
+    App.init(ownerAccount);
   });
 });

@@ -116,6 +116,14 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       await this.crowdsale.buyTokens(purchaser, { value: ether(0.2), from: purchaser }).should.be.fulfilled;
     });
 
+    it('should reject payments if　amount of COT less than 1', async function () {
+      await increaseTimeTo(this.publicSales_startTime);
+      const whitelist = [purchaser];// add users into whitelist
+      await this.crowdsale.importPublicSaleList(whitelist);
+      await this.crowdsale.sendTransaction({ value: ether(0.000099), from: purchaser }).should.be.rejectedWith(EVMRevert);
+      await this.crowdsale.buyTokens(purchaser, { value: ether(0.000099), from: purchaser }).should.be.rejectedWith(EVMRevert);
+    });    
+
   });
 
 });

@@ -36,15 +36,27 @@
             <div class="panel-body">
               <h4>Token Address</h4>
               <span id="tokenAddress"></span>
-              <h4>Remaind Balance</h4>
-              <strong>Balance</strong>: <span id="TTBalance"></span> COT<br/><br/>
+              <h4>Balance</h4>
+              <strong>token remain Balance</strong>: <span id="remainBalance"></span> COT<br/><br/>
+              <strong>Sale token remain Balance</strong>: <span id="saleRemainBalance"></span> COT<br/><br/>
+              <strong>Holding Balance</strong>: <span id="TTBalance"></span> COT<br/><br/>
               <!--<input type="button" id="balance-check" value="check balance">-->
-              <input type="button" id="import-whiteList" value="import presale whitelist">
-              <input type="button" id="import-publicSale-whiteList" value="import public sale whitelist">
-              <input type="button" id="pause" value="sale pause">
-              <input type="button" id="unpause" value="sale start">
               <input type="button" id="check-history" value="check history">
             </div>
+            <div class="panel-body">
+              <textarea rows="10" cols="40"  name="whitelistToUpload" id="whitelistToUpload">
+              </textarea>
+              <input type="button" id="import-whiteList" value="import presale whitelist">
+            </div>
+            <div class="panel-body">
+              <textarea rows="10" cols="40"  name="publicSalewhitelistToUpload" id="publicSalewhitelistToUpload">
+              </textarea>
+              <input type="button" id="import-publicSale-whiteList" value="import public sale whitelist">
+            </div>  
+            <div class="panel-body">
+              <input type="button" id="pause" value="sale pause">
+              <input type="button" id="unpause" value="sale start">
+            </div>              
             <div class="panel-body">
               <strong>Address</strong>: 
               <input type="text" id="address_input" >              

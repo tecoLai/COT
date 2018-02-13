@@ -15,6 +15,9 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 	//契約オーナー最初持っているトークン量、トークン最大発行量-10億個、default:1000000000
 	uint256 public constant _totalSupply = 1000000000*10**18; 
 
+	//Japan Premium 期間に使うなCOT量,まだ未定です
+	uint256 public constant _JpPremiumSupply = 100000000*10**18;
+
 	//契約オーナーアドレス
 	address public ownerWallet;
 
@@ -42,7 +45,7 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 
 		//send all of token to owner in the begining.
 		//最初的に、契約生成するときに全部トークンは契約オーナーに上げる
-		ownerMintableToken.mint(msg.sender,_totalSupply);
+		ownerMintableToken.mint(msg.sender, _totalSupply, _JpPremiumSupply);
 
 		return ownerMintableToken;
 	}
@@ -85,6 +88,12 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 	    	tokens = preSaleDiscount( weiAmount, tokens );
 	    }
 
+	    require( tokens >= 1*10**18 );
+
+	    //小数点切り捨てる
+	    tokens = tokens/10**18;
+		tokens = tokens*10**18;
+
 	    // update state
 	    weiRaised = weiRaised.add(weiAmount);
 
@@ -106,7 +115,7 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 
 		if(_weiAmount < 25*10**18){
 			discounted_token = basic_tokens;
-		}else if(_weiAmount < 41.668*10**18){
+		}else if(_weiAmount < 41.6668*10**18){
 			discounted_token = basic_tokens*100/95; //5% discount
 		}else if(_weiAmount < 83.3335*10**18){
 			discounted_token = basic_tokens*10/9; //10% discount
@@ -115,9 +124,6 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 		}else{
 			discounted_token = basic_tokens*10/7; //30% discount
 		}
-
-		discounted_token = discounted_token/10**18;
-		discounted_token = discounted_token*10**18;
 
 		return discounted_token;
 	}	
