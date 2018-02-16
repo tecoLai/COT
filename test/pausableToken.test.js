@@ -65,8 +65,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       await increaseTimeTo(this.preSales_startTime);
       const whitelist = [purchaser];// add users into whitelist
       await this.crowdsale.importList(whitelist);
-      await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.fulfilled;
-      await this.crowdsale.buyTokens(purchaser, { from: purchaser, value: value }).should.be.fulfilled;
+      await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser }).should.be.fulfilled;
     });
 
     it('should reject if sale was be paused', async function () {
@@ -74,8 +73,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       const whitelist = [purchaser];// add users into whitelist
       await this.crowdsale.importList(whitelist);
       await this.crowdsale.pause();
-      await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
-      await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
+      await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser }).should.be.rejectedWith(EVMRevert);
 
     });
 
@@ -84,11 +82,9 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       const whitelist = [purchaser];// add users into whitelist
       await this.crowdsale.importList(whitelist);
       await this.crowdsale.pause();
-      await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
-      await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
+      await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser }).should.be.rejectedWith(EVMRevert);
       await this.crowdsale.unpause();
-      await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.fulfilled;
-      await this.crowdsale.buyTokens(purchaser, { from: purchaser, value: value }).should.be.fulfilled;      
+      await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser }).should.be.fulfilled;      
     });    
 
   });

@@ -56,8 +56,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       await increaseTimeTo(this.preSales_startTime);
       const whitelist = [owner];// add users into whitelist
       await this.crowdsale.importList(whitelist);
-      await this.crowdsale.sendTransaction({ value: value, from: owner }).should.be.rejectedWith(EVMRevert);
-      await this.crowdsale.buyTokens(owner, { value: value, from: owner }).should.be.rejectedWith(EVMRevert);
+      await this.crowdsale.sendTransaction({ value: ether(25), from: owner }).should.be.rejectedWith(EVMRevert);
     });
 
     it('owner can not buy token after public sale-start', async function () {
@@ -78,18 +77,16 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
 
     it('should accept payments after pre sale-start', async function () {
       await increaseTimeTo(this.preSales_startTime);
-      const whitelist = [purchaser];// add users into whitelist
+      const whitelist = [purchaser2];// add users into whitelist
       await this.crowdsale.importList(whitelist);
-      await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.fulfilled;
-      await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.fulfilled;
+      await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser2 }).should.be.fulfilled;
     });   
 
     it('should reject payments after pre sale-end', async function () {
       await increaseTimeTo(this.afterPreSales_endTime);
-      const whitelist = [purchaser];// add users into whitelist
+      const whitelist = [purchaser3];// add users into whitelist
       await this.crowdsale.importList(whitelist);
-      await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
-      await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
+      await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser3 }).should.be.rejectedWith(EVMRevert);
     }); 
 
     it('should reject payments after public sale-end', async function () {
@@ -104,8 +101,9 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       await increaseTimeTo(this.preSales_startTime);
       const whitelist = [purchaser];// add users into whitelist
       await this.crowdsale.importList(whitelist);
-      await this.crowdsale.sendTransaction({ value: ether(0.2), from: purchaser }).should.be.rejectedWith(EVMRevert);
-      await this.crowdsale.buyTokens(purchaser, { value: ether(0.2), from: purchaser }).should.be.rejectedWith(EVMRevert);
+
+      //lowest_weiAmount was be setted to 1*10**18 for this test
+      await this.crowdsale.sendTransaction({ value: ether(0.9999), from: purchaser }).should.be.rejectedWith(EVMRevert);
     });
 
     it('should accept payments if eth amount less then lowest_weiAmount after public sale-start', async function () {

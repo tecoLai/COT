@@ -67,14 +67,15 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 
 	    require(validPurchase());
 
-	    //need to check whitelist when public sale
-	    //トークンを購入する場合に、white checkListをチェックしなければならない
-
 	    uint256 weiAmount = msg.value;
+
+	    require( weiAmount >= 0.0001*10**18 );
+
 	    uint256 tokens = weiAmount.mul(rate);
 	    uint8 inWhitelist = checkList(beneficiary);
 
 	    //user should be in white list
+	    //トークンを購入する場合に、white checkListをチェックしなければならない
 	    require( (inWhitelist == 1) || (inWhitelist == 2) );
 
 	    if( (now >= preSale_startTime) && (now <= preSale_endTime) ){
@@ -114,7 +115,7 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 		uint256 discounted_token;
 
 		if(_weiAmount < 25*10**18){
-			discounted_token = basic_tokens;
+			discounted_token = 0;
 		}else if(_weiAmount < 41.6668*10**18){
 			discounted_token = basic_tokens*100/95; //5% discount
 		}else if(_weiAmount < 83.3335*10**18){
