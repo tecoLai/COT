@@ -64,6 +64,111 @@ App = {
     $(document).on('click', '#check-whitelist', App.handleCheckWhiteList);
     $(document).on('click', '#check-history', App.handleCheckHistory);
     $(document).on('click', '#transferTokenButton', App.handleTransferToken);
+    $(document).on('click', '#get-lockup-time', App.handleGetLockTime);
+    $(document).on('click', '#update-lockup-time', App.handleUpdateLockTime);
+  },
+  handleUpdateLockTime: function(event) {
+    event.preventDefault();
+    console.log('updating token locktime');
+    var COTCoinCrowdsaleInstance;
+
+    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+      COTCoinCrowdsaleInstance = instance;
+
+      var new_lockup_time = $('#lock_time_input').val();
+      var timestamp = new Date(new_lockup_time).getTime();
+      if( isNaN(timestamp)){
+        console.log('format error');
+        return;
+      }
+      timestamp = timestamp / 1000;
+      console.log(timestamp);
+      return COTCoinCrowdsaleInstance.updateLockupTime(timestamp);
+
+    }).then(function(result){
+        console.log('update lockup time success');
+
+    }).catch(function(err){
+      console.log(err.message);
+    });
+
+
+/*
+    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+      COTCoinCrowdsaleInstance = instance;
+
+      COTCoinCrowdsaleInstance.token().then(function(addr){
+        tokenAddress = addr;
+        return tokenAddress;
+
+      }).then(function(tokenAddress_data){
+
+        var COTCoinInstance;
+        COTCoinInstance = App.contracts.COTCoin.at(tokenAddress_data);
+        var new_lockup_time = $('#lock_time_input').val();
+        var timestamp = new Date(new_lockup_time).getTime();
+        if( isNaN(timestamp)){
+          console.log('format error');
+          return;
+        }
+        timestamp = timestamp / 1000;
+        console.log(timestamp);
+        return COTCoinInstance.updateLockupTime(timestamp);
+
+      }).then(function(result){
+        console.log('update lockup time success');
+
+      }).catch(function(err) {
+        console.log(err.message);
+      });
+
+    }).catch(function(err){
+      console.log(err.message);
+    });
+*/
+  },
+
+  handleGetLockTime: function(event) {
+    event.preventDefault();
+    console.log('get token locktime');
+    var COTCoinCrowdsaleInstance;
+
+    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+      COTCoinCrowdsaleInstance = instance;
+
+      COTCoinCrowdsaleInstance.token().then(function(addr){
+        tokenAddress = addr;
+        return tokenAddress;
+
+      }).then(function(tokenAddress_data){
+
+        var COTCoinInstance;
+        COTCoinInstance = App.contracts.COTCoin.at(tokenAddress_data);
+
+        return COTCoinInstance.getLockupTime();
+
+      }).then(function(lockup_time_result){
+        var lockup_timestamp = lockup_time_result.toString(10);
+
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var timestamp = new Date(parseInt(lockup_timestamp)*1000);
+        var month = months[timestamp.getMonth()];
+        var date = timestamp.getDate();
+        var hour = timestamp.getHours();
+        var min = timestamp.getMinutes();
+        var sec = timestamp.getSeconds();
+        var time = date + ' ' + month + ' ' +  hour + ':' + min + ':' + sec ;
+        console.log(lockup_timestamp);
+        console.log(time);
+
+      }).catch(function(err) {
+        console.log(err.message);
+      });
+
+    }).catch(function(err){
+      console.log(err.message);
+    });
+
   },
 
   handlePause: function(event) {
@@ -367,8 +472,8 @@ App = {
                   var to = result.to;
                   var value = result.value;
                   value = value.toString(10);
-                  var a =  web3.fromWei(value, "ether");
-                  var receipt = 'from ' + from + ' to ' + to + '/ send ' + a;
+                  var ether_amount =  web3.fromWei(value, "ether");
+                  var receipt = 'from ' + from + ' to ' + to + '/ send ' + ether_amount;
                   console.log(receipt);
                 }
                 else{

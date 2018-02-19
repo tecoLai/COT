@@ -41,97 +41,65 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     this.afterPreSales_endTime = event_period.afterPreSales_endTime(this.preSales_endTime);
     this.afterEndTime = event_period.afterEndTime(this.publicSales_endTime);
     this.lockUpTime = event_period.lockUpTime(this.publicSales_endTime); 
+    this.lockUpTime_2 = event_period.lockUpTime(this.lockUpTime);
     this.crowdsale = await COTCoinCrowdsale.new(this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, this.lockUpTime, rate, lowest_weiAmount, wallet);   
     this.token_address = await this.crowdsale.token();
     //console.log(this.token_address);
     this.token = COTCoin.at(this.token_address);
   });
 
-  describe('token transaction', function () {
-    it('token can be given from owner before sale start', async function () {
+  describe('lock up token transaction', function () {
+    it('should reject if token does not unlock yet', async function () {
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
-      const totalTokenBalance = await this.token.balanceOf(purchaser);
-      let totalToken = token(totalTokenBalance.toNumber(10));
-
-      totalToken.should.equal(100);
-
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.rejectedWith(EVMRevert);
     });
 
-    it('token can be given from owner after sale start', async function () {
+    it('should reject if token does not unlock yet when pre sale period', async function () {
       await increaseTimeTo(this.preSales_startTime);
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
-      const totalTokenBalance = await this.token.balanceOf(purchaser);
-      let totalToken = token(totalTokenBalance.toNumber(10));
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.rejectedWith(EVMRevert);
+    }); 
 
-      totalToken.should.equal(100);
-    });   
-
-
-    it('token can be given from owner after sale end', async function () {
-      await increaseTimeTo(this.afterEndTime);
+    it('should reject if token does not unlock yet when public sale period', async function () {
+      await increaseTimeTo(this.publicSales_startTime);
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
-      const totalTokenBalance = await this.token.balanceOf(purchaser);
-      let totalToken = token(totalTokenBalance.toNumber(10));
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.rejectedWith(EVMRevert);
+    }); 
 
-      totalToken.should.equal(100);
-      
-    });
-
-
-    it('token can be given from user before sale start', async function () {
+    it('should accept if token have unlocked', async function () {
+      await increaseTimeTo(this.lockUpTime);
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
-      await this.token.transfer(purchaser2, tokens,{from: owner}).should.be.fulfilled;
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.fulfilled;
+    }); 
 
-      const totalTokenBalance1 = await this.token.balanceOf(purchaser);
-      let totalToken1 = token(totalTokenBalance1.toNumber(10));
-
-
-      const totalTokenBalance2 = await this.token.balanceOf(purchaser2);
-      let totalToken2 = token(totalTokenBalance2.toNumber(10));
-
-
-      const totalToken = totalToken1 + totalToken2;
-
-      totalToken.should.equal(200);
-    });   
-
-    it('token can be given from user after sale start', async function () {
-      await increaseTimeTo(this.preSales_startTime);
+    it('should reject after update lockup time ', async function () {
+      await increaseTimeTo(this.lockUpTime);
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
-      await this.token.transfer(purchaser2, tokens,{from: owner}).should.be.fulfilled;
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.fulfilled;
 
-      const totalTokenBalance1 = await this.token.balanceOf(purchaser);
-      let totalToken1 = token(totalTokenBalance1.toNumber(10));
+      await this.crowdsale.updateLockupTime(this.lockUpTime_2);
+      await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.rejectedWith(EVMRevert);
+    }); 
 
-      const totalTokenBalance2 = await this.token.balanceOf(purchaser2);
-      let totalToken2 = token(totalTokenBalance2.toNumber(10));
-
-      const totalToken = totalToken1 + totalToken2;
-      totalToken.should.equal(200);
-      
-    });     
-
-    it('token can be given from user after sale end', async function () {
-      await increaseTimeTo(this.afterEndTime);
+    it('should appect if time reach the new lockup time after update lockup time ', async function () {
+      await increaseTimeTo(this.lockUpTime);
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
-      await this.token.transfer(purchaser2, tokens,{from: owner}).should.be.fulfilled;
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.fulfilled;
 
-      const totalTokenBalance1 = await this.token.balanceOf(purchaser);
-      let totalToken1 = token(totalTokenBalance1.toNumber(10));
+      await this.crowdsale.updateLockupTime(this.lockUpTime_2);
+      await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.rejectedWith(EVMRevert);
 
-      const totalTokenBalance2 = await this.token.balanceOf(purchaser2);
-      let totalToken2 = token(totalTokenBalance2.toNumber(10));
-
-      const totalToken = totalToken1 + totalToken2;
-      totalToken.should.equal(200);
-      
-    });        
-
+      await increaseTimeTo(this.lockUpTime_2);
+      await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
+      await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.fulfilled;
+    }); 
   });
 });

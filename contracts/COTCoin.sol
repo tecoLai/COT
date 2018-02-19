@@ -13,6 +13,18 @@ contract COTCoin is MintableToken{
 	//セール期間に使えるCOT最大発行量
 	uint256 public _maxSaleSupply;
 
+	address public _owner;
+
+	//トークン交換できる解放時間
+	uint256 public _token_lockUp_release_time;
+
+	function COTCoin(uint256 _lockUp_release_time)public{
+
+	    //トークンロックアップ時間設定
+	    _token_lockUp_release_time = _lockUp_release_time;
+	}
+
+
 	// overriding MintableToken#mint to　disable mint token function
 	// overriding MintableToken#mint トークンミント機能を隠し、ミント機能必要がない、契約オーナーからトークンを上げるから
 	function mint(address _to, uint256 _amount, uint256 _JpPremiumSupply) onlyOwner canMint public returns (bool) {
@@ -27,6 +39,8 @@ contract COTCoin is MintableToken{
 
 	    //40％量COTはセール期間に用
 	    _maxSaleSupply = (_amount*40/100).sub(_JpPremiumSupply);
+
+	    _owner = _to;
 
 	    return true;
 	}
@@ -65,12 +79,54 @@ contract COTCoin is MintableToken{
 		return true;
 	}
 
+	/**
+	* @dev transfer token for a specified address
+	* @param _to The address to transfer to.
+	* @param _value The amount to be transferred.
+	// override this method to check token lockup time.
+	*/
+	function transfer(address _to, uint256 _value) public returns (bool) {
+		require(_to != address(0));
+		require(_value <= balances[msg.sender]);
+
+		//オーナー以外の人たちはトークン交換できる解放時間後で、交換できます
+		if(msg.sender != _owner){
+			require(now >= _token_lockUp_release_time);
+		}
+
+		// SafeMath.sub will throw if there is not enough balance.
+		balances[msg.sender] = balances[msg.sender].sub(_value);
+		balances[_to] = balances[_to].add(_value);
+		Transfer(msg.sender, _to, _value);
+
+		return true;
+	}
+
   	/**
 	* @dev Function to check sale remain token
 	* @return A uint256 that indicates if the operation was successful.
 	*/
 	function remainSaleSupply() public view returns (uint256) {
 		return _maxSaleSupply;
+	}
+
+  	/**
+	* @dev Function to update token lockup time
+	* @return A bool that indicates if the operation was successful.
+	*/
+	function updateLockupTime(uint256 _newLockUpTime) onlyOwner public returns(bool){
+
+		_token_lockUp_release_time = _newLockUpTime;
+
+		return true;
+	}
+
+  	/**
+	* @dev Function to get token lockup time
+	* @return A uint256 that indicates if the operation was successful.
+	*/
+	function getLockupTime() public view returns (uint256) {
+		return _token_lockUp_release_time;
 	}
 }
 

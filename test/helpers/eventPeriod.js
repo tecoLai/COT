@@ -7,4 +7,5 @@ export const event_period = {
   publicSales_endTime: function (val) { return val + duration.weeks(4); },
   afterPreSales_endTime: function (val) { return val + duration.seconds(1); },
   afterEndTime: function (val) { return val + duration.seconds(1); },
+  lockUpTime: function (val) { return val + duration.weeks(1); },
 };

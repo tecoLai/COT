@@ -2,11 +2,11 @@ pragma solidity ^0.4.18;
 
 import './COTCoin.sol';
 import './WhiteList.sol';
+import './CrowdsaleWithLockUp.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
-import 'zeppelin-solidity/contracts/crowdsale/Crowdsale.sol';
 import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
 
-contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
+contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	using SafeMath for uint256;
 
 	COTCoin public ownerMintableToken;
@@ -27,8 +27,8 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 	uint256 public publicSale_endTime;
 	uint256 public lowest_weiAmount;
 
-	function COTCoinCrowdsale(uint256 _startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _endTime, uint256 _rate, uint256 _lowest_weiAmount, address _wallet) public
-	    Crowdsale(_startTime, _endTime, _rate, _wallet)
+	function COTCoinCrowdsale(uint256 _startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _endTime, uint256 _token_lockUp_releaseTime, uint256 _rate, uint256 _lowest_weiAmount, address _wallet) public
+	    CrowdsaleWithLockUp(_startTime, _endTime, _rate, _wallet, _token_lockUp_releaseTime)
 	{
 	    //As goal needs to be met for a successful crowdsale
 	    //the value needs to less or equal than a cap which is limit for accepted funds
@@ -38,10 +38,11 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 	    publicSale_startTime = _publicSale_startTime;
 	    publicSale_endTime = _endTime;
 	    lowest_weiAmount = _lowest_weiAmount;
+
 	}
 
 	function createTokenContract() internal returns(MintableToken){
-		ownerMintableToken = new COTCoin();
+		ownerMintableToken = new COTCoin(lockUpTime);
 
 		//send all of token to owner in the begining.
 		//最初的に、契約生成するときに全部トークンは契約オーナーに上げる
@@ -69,6 +70,7 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 
 	    uint256 weiAmount = msg.value;
 
+	    //最低限0.0001個ETHを送金しなければなりません。
 	    require( weiAmount >= 0.0001*10**18 );
 
 	    uint256 tokens = weiAmount.mul(rate);
@@ -89,6 +91,7 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 	    	tokens = preSaleDiscount( weiAmount, tokens );
 	    }
 
+	    //最低限1個COTを購入しなければなりません。
 	    require( tokens >= 1*10**18 );
 
 	    //小数点切り捨てる
@@ -127,5 +130,14 @@ contract COTCoinCrowdsale is Crowdsale, Pausable, WhiteList{
 		}
 
 		return discounted_token;
+	}	
+
+  	/**
+	* @dev Function to update token lockup time
+	* @return A bool that indicates if the operation was successful.
+	*/
+	function updateLockupTime(uint256 _newLockUpTime) onlyOwner public returns(bool){
+		require( _newLockUpTime > now );
+		return ownerMintableToken.updateLockupTime(_newLockUpTime);
 	}	
 }
