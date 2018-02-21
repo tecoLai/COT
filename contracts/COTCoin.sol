@@ -27,7 +27,7 @@ contract COTCoin is MintableToken{
 
 	// overriding MintableToken#mint to　disable mint token function
 	// overriding MintableToken#mint トークンミント機能を隠し、ミント機能必要がない、契約オーナーからトークンを上げるから
-	function mint(address _to, uint256 _amount, uint256 _JpPremiumSupply) onlyOwner canMint public returns (bool) {
+	function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
 
 	    totalSupply = totalSupply.add(_amount);
 
@@ -38,7 +38,7 @@ contract COTCoin is MintableToken{
 	    Transfer(address(0), _to, _amount);
 
 	    //40％量COTはセール期間に用
-	    _maxSaleSupply = (_amount*40/100).sub(_JpPremiumSupply);
+	    _maxSaleSupply = (_amount*40/100);
 
 	    _owner = _to;
 

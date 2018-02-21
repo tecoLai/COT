@@ -15,7 +15,7 @@ const should = require('chai')
 const COTCoinCrowdsale = artifacts.require("./COTCoinCrowdsale.sol");
 const COTCoin = artifacts.require("./COTCoin.sol");
 
-contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3]) {
+contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3, purchaser4, purchaser5]) {
   const wallet = owner;
   const rate = event_parameter.rate();
   const totalSupply = event_parameter.totalSupply();
@@ -32,14 +32,16 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
   beforeEach(async function () {
 
     this.current_time = web3.eth.getBlock(web3.eth.blockNumber).timestamp;
-    this.preSales_startTime = event_period.preSales_startTime(this.current_time);
+    this.premiumSales_startTime = event_period.premiumSales_startTime(this.current_time);;
+    this.premiumSales_endTime = event_period.premiumSales_endTime(this.premiumSales_startTime);;
+    this.preSales_startTime = event_period.preSales_startTime(this.premiumSales_endTime);
     this.preSales_endTime = event_period.preSales_endTime(this.preSales_startTime);
     this.publicSales_startTime = event_period.publicSales_startTime(this.preSales_endTime);
     this.publicSales_endTime = event_period.publicSales_endTime(this.publicSales_startTime);
     this.afterPreSales_endTime = event_period.afterPreSales_endTime(this.preSales_endTime);
     this.afterEndTime = event_period.afterEndTime(this.publicSales_endTime);
     this.lockUpTime = event_period.lockUpTime(this.publicSales_endTime); 
-    this.crowdsale = await COTCoinCrowdsale.new(this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, this.lockUpTime, rate, lowest_weiAmount, wallet);   
+    this.crowdsale = await COTCoinCrowdsale.new(this.premiumSales_startTime, this.premiumSales_endTime, this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, this.lockUpTime, rate, lowest_weiAmount, wallet);   
     this.token_address = await this.crowdsale.token();
     //console.log(this.token_address);
     this.token = COTCoin.at(this.token_address);
@@ -69,11 +71,45 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       totalToken1.should.equal(0);
     });   
 
+    it('total amount of token should not change when premium sale', async function () {
+      await increaseTimeTo(this.premiumSales_startTime);
+      const whitelist = [purchaser4,purchaser5];// add users into whitelist
+      await this.crowdsale.importList(whitelist, 3);
+
+      const value1 = ether(25);
+      await this.crowdsale.sendTransaction({ value: value1, from: purchaser4 }).should.be.fulfilled;
+      const totalToken_data3 = await this.token.balanceOf(purchaser4);
+      const totalToken3 = token(totalToken_data3.toNumber(10));
+      
+      const value2 = ether(25);
+      await this.crowdsale.sendTransaction({ value: value2, from: purchaser5 }).should.be.fulfilled;
+      const totalToken_data4 = await this.token.balanceOf(purchaser5);
+      const totalToken4 = token(totalToken_data4.toNumber(10));
+
+      const owner_holding_totalToken_data = await this.token.balanceOf(owner);
+      const owner_holding_totalToken = token(owner_holding_totalToken_data.toNumber(10));
+
+      const total_amount = totalToken3 + totalToken4 + owner_holding_totalToken;
+
+      /*
+      console.log(value1);   
+      console.log(value2);      
+      console.log(owner_holding_totalToken);
+      console.log(totalToken3);
+      console.log(totalToken4);
+      console.log(typeof(owner_holding_totalToken));
+      console.log(typeof(totalToken3)); 
+      console.log(typeof(totalToken4));      
+      */
+
+      total_amount.should.equal(totalSupply);
+    });
+
 
     it('total amount of token should not change when pre sale', async function () {
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist = [purchaser,purchaser2];// add users into whitelist
-      await this.crowdsale.importList(whitelist);
+      await this.crowdsale.importList(whitelist, 1);
 
       const value1 = ether(25);
       await this.crowdsale.sendTransaction({ value: value1, from: purchaser }).should.be.fulfilled;
@@ -107,7 +143,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     it('should not be 0 after purchase when public sale', async function () {
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist = [purchaser,purchaser2];// add users into whitelist
-      await this.crowdsale.importPublicSaleList(whitelist);
+      await this.crowdsale.importList(whitelist, 2);
       await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.fulfilled;
 
       const totalToken_data2 = await this.token.balanceOf(purchaser);
@@ -128,7 +164,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     it('total amount of token should not change when public sale', async function () {
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist = [purchaser,purchaser2];// add users into whitelist
-      await this.crowdsale.importPublicSaleList(whitelist);
+      await this.crowdsale.importList(whitelist, 2);
 
       const value1 = ether((Math.random() * 10 + 1).toFixed(2));
       await this.crowdsale.sendTransaction({ value: value1, from: purchaser }).should.be.fulfilled;
@@ -162,7 +198,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     it('owner should get eth after buyer purchased token', async function () {
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist = [purchaser,purchaser2];// add users into whitelist
-      await this.crowdsale.importPublicSaleList(whitelist);
+      await this.crowdsale.importList(whitelist, 2);
 
       const purchaser1_balance = web3.fromWei(web3.eth.getBalance(purchaser), "ether"); 
       const purchaser2_balance = web3.fromWei(web3.eth.getBalance(purchaser2), "ether"); 
@@ -194,9 +230,16 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       const expect_remain_totalToken_data = await this.token.remainSaleSupply();
       const expect_remain_totalToken = token(expect_remain_totalToken_data.toNumber(10));
 
+      await increaseTimeTo(this.premiumSales_startTime);
+      const whitelist1 = [purchaser5];// add users into whitelist
+      await this.crowdsale.importList(whitelist1, 3);
+      await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser5 }).should.be.fulfilled;
+      const totalToken_data5 = await this.token.balanceOf(purchaser5);
+      const totalToken5 = token(totalToken_data5.toNumber(10));
+
       await increaseTimeTo(this.publicSales_startTime);
-      const whitelist = [purchaser,purchaser2];// add users into whitelist
-      await this.crowdsale.importList(whitelist);
+      const whitelist2 = [purchaser,purchaser2];// add users into whitelist
+      await this.crowdsale.importList(whitelist2, 1);
 
       const value1 = ether(25);
       await this.crowdsale.sendTransaction({ value: value1, from: purchaser }).should.be.fulfilled;
@@ -217,7 +260,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       console.log(remain_totalToken);
       console.log(expect_remain_totalToken);
       */
-      expect_remain_totalToken.should.equal((totalToken3 + totalToken4 + remain_totalToken));
+      expect_remain_totalToken.should.equal((totalToken3 + totalToken4 + totalToken5 + remain_totalToken));
     });
 
   });

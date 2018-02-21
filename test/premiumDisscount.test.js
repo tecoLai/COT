@@ -47,19 +47,19 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
   });
 
 
-  describe('disscount for pre sale', function () {
+  describe('disscount for premium sale', function () {
     
     it('should reject if eth lower than 25', async function () {
-      await increaseTimeTo(this.preSales_startTime);
+      await increaseTimeTo(this.premiumSales_startTime);
       const whitelist = [purchaser];// add users into whitelist
-      await this.crowdsale.importList(whitelist, 1);
+      await this.crowdsale.importList(whitelist, 3);
       await this.crowdsale.sendTransaction({ value: ether(24.999999999), from: purchaser }).should.be.rejectedWith(EVMRevert);
     });
 
     it('should use disscount pattern 1 if eth between 25 to 41.6667', async function () {
-      await increaseTimeTo(this.preSales_startTime);
+      await increaseTimeTo(this.premiumSales_startTime);
       const whitelist = [purchaser];// add users into whitelist
-      await this.crowdsale.importList(whitelist, 1);
+      await this.crowdsale.importList(whitelist, 3);
       await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser }).should.be.fulfilled;
       const totalToken_data1 = await this.token.balanceOf(purchaser);
       const totalToken1 = token(totalToken_data1.toNumber(10));
@@ -80,9 +80,9 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     });
 
     it('should use disscount pattern 2 if eth between 41.6668 to 83.3334', async function () {
-      await increaseTimeTo(this.preSales_startTime);
+      await increaseTimeTo(this.premiumSales_startTime);
       const whitelist = [purchaser2, purchaser3];// add users into whitelist
-      await this.crowdsale.importList(whitelist, 1);
+      await this.crowdsale.importList(whitelist, 3);
       await this.crowdsale.sendTransaction({ value: ether(41.6668), from: purchaser2 }).should.be.fulfilled;
       const totalToken_data1 = await this.token.balanceOf(purchaser2);
       const totalToken1 = token(totalToken_data1.toNumber(10));
@@ -101,9 +101,9 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     });    
 
     it('should use disscount pattern 3 if eth between 83.3335 to 250', async function () {
-      await increaseTimeTo(this.preSales_startTime);
+      await increaseTimeTo(this.premiumSales_startTime);
       const whitelist = [purchaser4, purchaser7];// add users into whitelist
-      await this.crowdsale.importList(whitelist, 1);
+      await this.crowdsale.importList(whitelist, 3);
       await this.crowdsale.sendTransaction({ value: ether(83.3335), from: purchaser4 }).should.be.fulfilled;
       const totalToken_data1 = await this.token.balanceOf(purchaser4);
       const totalToken1 = token(totalToken_data1.toNumber(10));
@@ -128,16 +128,16 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     });   
     
     it('should use disscount pattern 4 if eth bigger than 250.0001', async function () {
-      await increaseTimeTo(this.preSales_startTime);
+      await increaseTimeTo(this.premiumSales_startTime);
       const whitelist = [purchaser8];// add users into whitelist
-      await this.crowdsale.importList(whitelist, 1);
+      await this.crowdsale.importList(whitelist, 3);
 
       web3.eth.sendTransaction({from:purchaser5,to:purchaser8,value:web3.toWei(90,"ether")});
       web3.eth.sendTransaction({from:purchaser6,to:purchaser8,value:web3.toWei(90,"ether")});
       await this.crowdsale.sendTransaction({ value: ether(250.0001), from: purchaser8 }).should.be.fulfilled;
       const totalToken_data1 = await this.token.balanceOf(purchaser8);
       const totalToken1 = token(totalToken_data1.toNumber(10));
-      const expect_1 = 3571430;
+      const expect_1 = 4166668;
 
       expect_1.should.equal(totalToken1);
 

@@ -34,14 +34,16 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
   beforeEach(async function () {
 
     this.current_time = web3.eth.getBlock(web3.eth.blockNumber).timestamp;
-    this.preSales_startTime = event_period.preSales_startTime(this.current_time);
+    this.premiumSales_startTime = event_period.premiumSales_startTime(this.current_time);;
+    this.premiumSales_endTime = event_period.premiumSales_endTime(this.premiumSales_startTime);;
+    this.preSales_startTime = event_period.preSales_startTime(this.premiumSales_endTime);
     this.preSales_endTime = event_period.preSales_endTime(this.preSales_startTime);
     this.publicSales_startTime = event_period.publicSales_startTime(this.preSales_endTime);
     this.publicSales_endTime = event_period.publicSales_endTime(this.publicSales_startTime);
     this.afterPreSales_endTime = event_period.afterPreSales_endTime(this.preSales_endTime);
     this.afterEndTime = event_period.afterEndTime(this.publicSales_endTime);
     this.lockUpTime = event_period.lockUpTime(this.publicSales_endTime); 
-    this.crowdsale = await COTCoinCrowdsale.new(this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, this.lockUpTime, rate, lowest_weiAmount, wallet);   
+    this.crowdsale = await COTCoinCrowdsale.new(this.premiumSales_startTime, this.premiumSales_endTime, this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, this.lockUpTime, rate, lowest_weiAmount, wallet);   
     this.token_address = await this.crowdsale.token();
     //console.log(this.token_address);
     this.token = COTCoin.at(this.token_address);
@@ -58,7 +60,17 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
 
     });
 
-    it('token can be given from owner after sale start', async function () {
+    it('token can be given from owner after premium sale start', async function () {
+      await increaseTimeTo(this.premiumSales_startTime);
+      const tokens = web3.toWei(100, "ether");
+      await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
+      const totalTokenBalance = await this.token.balanceOf(purchaser);
+      let totalToken = token(totalTokenBalance.toNumber(10));
+
+      totalToken.should.equal(100);
+    });   
+
+    it('token can be given from owner after pre sale start', async function () {
       await increaseTimeTo(this.preSales_startTime);
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
@@ -68,6 +80,15 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       totalToken.should.equal(100);
     });   
 
+    it('token can be given from owner after public sale start', async function () {
+      await increaseTimeTo(this.publicSales_startTime);
+      const tokens = web3.toWei(100, "ether");
+      await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
+      const totalTokenBalance = await this.token.balanceOf(purchaser);
+      let totalToken = token(totalTokenBalance.toNumber(10));
+
+      totalToken.should.equal(100);
+    }); 
 
     it('token can be given from owner after sale end', async function () {
       await increaseTimeTo(this.afterEndTime);
@@ -81,7 +102,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     });
 
 
-    it('token can be given from user before sale start', async function () {
+    it('total amount of token should not be changed before sale start', async function () {
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
       await this.token.transfer(purchaser2, tokens,{from: owner}).should.be.fulfilled;
@@ -99,8 +120,8 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       totalToken.should.equal(200);
     });   
 
-    it('token can be given from user after sale start', async function () {
-      await increaseTimeTo(this.preSales_startTime);
+    it('total amount of token should not be changed after sale start', async function () {
+      await increaseTimeTo(this.premiumSales_startTime);
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
       await this.token.transfer(purchaser2, tokens,{from: owner}).should.be.fulfilled;
@@ -116,7 +137,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       
     });     
 
-    it('token can be given from user after sale end', async function () {
+    it('total amount of token should not be changed after sale end', async function () {
       await increaseTimeTo(this.afterEndTime);
       const tokens = web3.toWei(100, "ether");
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;

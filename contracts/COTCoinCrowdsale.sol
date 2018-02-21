@@ -15,28 +15,29 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	//契約オーナー最初持っているトークン量、トークン最大発行量-10億個、default:1000000000
 	uint256 public constant _totalSupply = 1000000000*10**18; 
 
-	//Japan Premium 期間に使うなCOT量,まだ未定です
-	uint256 public constant _JpPremiumSupply = 100000000*10**18;
-
 	//契約オーナーアドレス
 	address public ownerWallet;
 
+	uint256 public premiumSale_startTime;
+	uint256 public premiumSale_endTime;
 	uint256 public preSale_startTime;
 	uint256 public preSale_endTime;
 	uint256 public publicSale_startTime;
 	uint256 public publicSale_endTime;
 	uint256 public lowest_weiAmount;
 
-	function COTCoinCrowdsale(uint256 _startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _endTime, uint256 _token_lockUp_releaseTime, uint256 _rate, uint256 _lowest_weiAmount, address _wallet) public
-	    CrowdsaleWithLockUp(_startTime, _endTime, _rate, _wallet, _token_lockUp_releaseTime)
+	function COTCoinCrowdsale(uint256 _premiumSale_startTime, uint256 _premiumSale_endTime, uint256 _preSale_startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _publicSale_endTime, uint256 _token_lockUp_releaseTime, uint256 _rate, uint256 _lowest_weiAmount, address _wallet) public
+	    CrowdsaleWithLockUp(_premiumSale_startTime, _publicSale_endTime, _rate, _wallet, _token_lockUp_releaseTime)
 	{
 	    //As goal needs to be met for a successful crowdsale
 	    //the value needs to less or equal than a cap which is limit for accepted funds
 	    ownerWallet = _wallet;
-	    preSale_startTime = _startTime;
+	    premiumSale_startTime = _premiumSale_startTime;
+	    premiumSale_endTime = _premiumSale_endTime;
+	    preSale_startTime = _preSale_startTime;
 	    preSale_endTime = _preSale_endTime;
 	    publicSale_startTime = _publicSale_startTime;
-	    publicSale_endTime = _endTime;
+	    publicSale_endTime = _publicSale_endTime;
 	    lowest_weiAmount = _lowest_weiAmount;
 
 	}
@@ -46,7 +47,7 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 
 		//send all of token to owner in the begining.
 		//最初的に、契約生成するときに全部トークンは契約オーナーに上げる
-		ownerMintableToken.mint(msg.sender, _totalSupply, _JpPremiumSupply);
+		ownerMintableToken.mint(msg.sender, _totalSupply);
 
 		return ownerMintableToken;
 	}
@@ -58,7 +59,7 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 
 		//only pre-salse period and public-sale period that can buy token
 		//トークンを購入する期間はpre-saleとpublic-saleだけ
-		require( ( (now >= preSale_startTime) && (now <= preSale_endTime) ) || ( (now >= publicSale_startTime) && (now <= publicSale_endTime) ) );
+		require( ( (now >= premiumSale_startTime) && (now <= premiumSale_endTime) ) || ( (now >= preSale_startTime) && (now <= preSale_endTime) ) || ( (now >= publicSale_startTime) && (now <= publicSale_endTime) ) );
 
 	    require(beneficiary != address(0));
 
@@ -78,18 +79,31 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 
 	    //user should be in white list
 	    //トークンを購入する場合に、white checkListをチェックしなければならない
-	    require( (inWhitelist == 1) || (inWhitelist == 2) );
+	    //1:プレセール, 2:パブリックセール, 3:プレミアムセール
+	    require( (inWhitelist == 1) || (inWhitelist == 2) || (inWhitelist == 3));
 
-	    if( (now >= preSale_startTime) && (now <= preSale_endTime) ){
+	    //プレミアム期間
+	    if( (now >= premiumSale_startTime) && (now <= premiumSale_endTime) ){
+
+	    	//user should be 3 in the whitelist when they want purchase token in premium-sale
+			require( inWhitelist == 3 );
+
+			//should be more than 25 eth
+	    	require(weiAmount >= lowest_weiAmount);
+	    	tokens = premiumSaleDiscount( weiAmount, tokens );
+		}
+
+		//プレセール期間
+		if( (now >= preSale_startTime) && (now <= preSale_endTime) ){
+
+			//user should be 1 in the whitelist when they want purchase token in pre-sale
+	    	//or user should be 3 in the whitelist when they want purchase token in premium-sale
+			require( (inWhitelist == 1) || (inWhitelist == 3) );
 
 	    	//should be more than 25 eth
-	    	require(weiAmount >= lowest_weiAmount);
-
-	    	//user should be 1 in the whitelist when they want purchase token in pre-sale
-	    	require( inWhitelist == 1);
-
-	    	tokens = preSaleDiscount( weiAmount, tokens );
-	    }
+	    	require(weiAmount >= lowest_weiAmount);		
+	    	tokens = preSaleDiscount( weiAmount, tokens );	
+		}
 
 	    //最低限1個COTを購入しなければなりません。
 	    require( tokens >= 1*10**18 );
@@ -131,6 +145,30 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 
 		return discounted_token;
 	}	
+
+  	/**
+	* @dev Function to give discount when premium sale
+	* @param _weiAmount The wei amount that buyer send
+	* @return A uint256 that indicates if the operation was successful.
+	*/
+	function premiumSaleDiscount(uint256 _weiAmount, uint256 basic_tokens)public pure returns (uint256){
+		uint256 discounted_token;
+
+		if(_weiAmount < 25*10**18){
+			discounted_token = 0;
+		}else if(_weiAmount < 41.6668*10**18){
+			discounted_token = basic_tokens*100/95; //5% discount
+		}else if(_weiAmount < 83.3335*10**18){
+			discounted_token = basic_tokens*10/9; //10% discount
+		}else if(_weiAmount < 250.0001*10**18){
+			discounted_token = basic_tokens*10/8; //20% discount
+		}else{
+			discounted_token = basic_tokens*10/6; //40% discount
+		}
+
+		return discounted_token;
+	}	
+	
 
   	/**
 	* @dev Function to update token lockup time

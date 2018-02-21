@@ -61,6 +61,7 @@ App = {
     $(document).on('click', '#unpause', App.handleUnPause);
     $(document).on('click', '#import-whiteList', App.handleImportWhiteList);
     $(document).on('click', '#import-publicSale-whiteList', App.handleImportPublicSaleWhiteList);
+    $(document).on('click', '#import-premiumSale-whiteList', App.handleImportPremiumSaleWhiteList);
     $(document).on('click', '#check-whitelist', App.handleCheckWhiteList);
     $(document).on('click', '#check-history', App.handleCheckHistory);
     $(document).on('click', '#transferTokenButton', App.handleTransferToken);
@@ -320,7 +321,7 @@ App = {
 
           for(var list_index = 0; list_index < whitelist_list.length; list_index ++ ){
             var importing_data = whitelist_list[list_index];
-            WhiteListInstance.importList(whitelist_list[list_index]).then(function(result){
+            WhiteListInstance.importList(whitelist_list[list_index], 1).then(function(result){
               console.log(result);
             }).catch(function(err) {
               console.log(err.message);
@@ -375,7 +376,11 @@ App = {
 
           for(var list_index = 0; list_index < publicSale_whitelist_list.length; list_index ++ ){
             var importing_data = publicSale_whitelist_list[list_index];
-            WhiteListInstance.importPublicSaleList(publicSale_whitelist_list[list_index]);
+            WhiteListInstance.importList(publicSale_whitelist_list[list_index], 2).then(function(result){
+              console.log(result);
+            }).catch(function(err) {
+              console.log(err.message);
+            });
           }  
 
         }).catch(function(err) {
@@ -386,6 +391,54 @@ App = {
     });    
   },  
 
+  handleImportPremiumSaleWhiteList: function(event){
+    event.preventDefault();
+    console.log(' import JP premium sale whitelist');
+
+    var WhiteListInstance;
+
+    web3.eth.getAccounts(function(error, accounts) {
+      if (error) {
+        console.log(error);
+      }
+
+      var new_list = [];
+      var premiumSalewhitelistFile = $.trim($('#premiumSalewhitelistToUpload').val());
+      if(premiumSalewhitelistFile == ''){
+        alert('no content');
+      }else{
+        var premiumSalewhitelistFile_whitelistFile_json = jQuery.parseJSON(premiumSalewhitelistFile);
+        
+        for(var json_index = 0; json_index < premiumSalewhitelistFile_whitelistFile_json.length; json_index++){
+          new_list.push(premiumSalewhitelistFile_whitelistFile_json[json_index]);
+        }
+        
+        var premiumSale_whitelist_list = [];
+        for(var index = 0; index < new_list.length; index+=100){
+          premiumSale_whitelist_list.push(new_list.slice(index,index+100));
+        }
+
+        console.log(premiumSale_whitelist_list);
+
+        App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+          WhiteListInstance = instance;
+
+          for(var list_index = 0; list_index < premiumSale_whitelist_list.length; list_index ++ ){
+            var importing_data = premiumSale_whitelist_list[list_index];
+            WhiteListInstance.importList(premiumSale_whitelist_list[list_index], 3).then(function(result){
+              console.log(result);
+            }).catch(function(err) {
+              console.log(err.message);
+            });
+          }  
+
+        }).catch(function(err) {
+          console.log(err.message);
+        });
+      }  
+
+    });    
+  },  
 
   handleCheckWhiteList: function(event){
     event.preventDefault();
