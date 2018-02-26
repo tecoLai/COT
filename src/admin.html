@@ -9,7 +9,6 @@
 
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
-
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -20,69 +19,128 @@
   <body>
     <div class="container">
       <div class="row">
-        <div class="col-xs-12 col-sm-8 col-sm-push-2">
+        <div class="col-xs-12 col-sm-12 col-sm-12">
           <h1 class="text-center">Admin</h1>
           <hr/>
           <br/>
         </div>
       </div>
+    </div>
+    <div class="container">
+      <div class="panel with-nav-tabs panel-default">
+        <div class="panel-heading">
+          <ul class="nav nav-tabs">
 
-      <div id="petsRow" class="row">
-        <div class="col-sm-6 col-sm-push-3 col-md-4 col-md-push-4">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">My Wallet</h3>
+            <li class="active"><a href="#tokenBalance" data-toggle="tab">Token balance</a></li>
+            <li><a href="#saleStatus" data-toggle="tab">Sale status</a></li>
+            <li><a href="#lockupTimeInfo" data-toggle="tab">Lockup time info</a></li>
+
+            <li class="dropdown">
+              <a href="#" data-toggle="dropdown">Whitelist <span class="caret"></span></a>
+              <ul class="dropdown-menu" role="menu">
+                <li><a href="#checkWhitelistInfo" data-toggle="tab">User search</a></li>
+                <li><a href="#premiumSaleWhitelistInfo" data-toggle="tab">Premium sale</a></li>
+                <li><a href="#privateSaleWhitelistInfo" data-toggle="tab">Private sale</a></li>
+                <li><a href="#publicSaleWhitelistInfo" data-toggle="tab">Public sale</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="panel-body">
+          <div class="tab-content">
+            <div class="tab-pane fade in active" id="tokenBalance">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <h4>Token Address</h4>
+                  <span id="tokenAddress"></span>
+                  <h4>Balance</h4>
+                  <strong>token remain Balance</strong>: <span id="remainBalance"></span> COT<br/><br/>
+                  <strong>Sale token remain Balance</strong>: <span id="saleRemainBalance"></span> COT<br/><br/>
+                  <strong>Holding Balance</strong>: <span id="TTBalance"></span> COT<br/><br/>
+                  <button type="button" class="btn btn-primary" id="check-history">check history</button>
+                </div>
+              </div>
             </div>
-            <div class="panel-body">
-              <h4>Token Address</h4>
-              <span id="tokenAddress"></span>
-              <h4>Balance</h4>
-              <strong>token remain Balance</strong>: <span id="remainBalance"></span> COT<br/><br/>
-              <strong>Sale token remain Balance</strong>: <span id="saleRemainBalance"></span> COT<br/><br/>
-              <strong>Holding Balance</strong>: <span id="TTBalance"></span> COT<br/><br/>
-              <!--<input type="button" id="balance-check" value="check balance">-->
-              <input type="button" id="check-history" value="check history">
+            <div class="tab-pane fade" id="saleStatus">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <button type="button" class="btn btn-warning" id="pause">sale pause</button>
+                  <button type="button" class="btn btn-success" id="unpause">sale restart</button>
+                </div>
+              </div> 
             </div>
-            <div class="panel-body">
-              <input type="button" id="pause" value="sale pause">
-              <input type="button" id="unpause" value="sale start">
-            </div>      
-            <div class="panel-body">
-              <input type="text" id="lock_time_input" placeholder="YYYY/MM/DD hh:mm:ss">  
-              <input type="button" id="update-lockup-time" value="update token lock time">
-              <br>
-              <input type="button" id="get-lockup-time" value="get token lock time ">
-            </div>              
-            <div class="panel-body">
-              <textarea rows="10" cols="40"  name="premiumSalewhitelistToUpload" id="premiumSalewhitelistToUpload">
-              </textarea>
-              <input type="button" id="import-premiumSale-whiteList" value="import premium sale whitelist">
-            </div>  
-            <div class="panel-body">
-              <textarea rows="10" cols="40"  name="whitelistToUpload" id="whitelistToUpload">
-              </textarea>
-              <input type="button" id="import-whiteList" value="import presale whitelist">
+            <div class="tab-pane fade" id="lockupTimeInfo">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">current lockup time</label>
+                  </div>    
+                  <div class="col-sm-12">
+                    <button type="button" class="btn btn-primary" id="get-lockup-time">get token lock time</button>
+                  </div>                                  
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">New lockup time</label>
+                    <input type="text" class="form-control" id="lock_time_input" placeholder="YYYY/MM/DD hh:mm:ss">
+                  </div>
+                  <div class="col-sm-12">
+                    <button type="button" class="btn btn-success" id="update-lockup-time">update token lock time</button>
+                  </div>
+                </div>
+              </div> 
             </div>
-            <div class="panel-body">
-              <textarea rows="10" cols="40"  name="publicSalewhitelistToUpload" id="publicSalewhitelistToUpload">
-              </textarea>
-              <input type="button" id="import-publicSale-whiteList" value="import public sale whitelist">
-            </div>        
-            <div class="panel-body">
-              <strong>Address</strong>: 
-              <input type="text" id="address_input" >              
-              <input type="button" id="check-whitelist" value="check address is whitelist or not">
+            <div class="tab-pane fade" id="checkWhitelistInfo">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <h3>User search</h3>
+                  <strong>Address</strong>: 
+                  <input type="text" class="form-control" id="address_input" placeholder="please enter user address">              
+                  <button type="button" class="btn btn-primary" id="check-whitelist">serach user</button>
+                </div>
+              </div> 
+            </div>         
+            <div class="tab-pane fade" id="premiumSaleWhitelistInfo">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <h3>premium sale</h3>
+                  <textarea class="form-control" name="premiumSalewhitelistToUpload" id="premiumSalewhitelistToUpload">
+                  </textarea>
+                  <button type="button" class="btn btn-primary" id="import-premiumSale-whiteList">import premium sale whitelist</button>
+                </div>
+              </div> 
+            </div>
+            <div class="tab-pane fade" id="privateSaleWhitelistInfo">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <h3>presale sale</h3>
+                  <textarea class="form-control" name="whitelistToUpload" id="whitelistToUpload">
+                  </textarea>
+                  <button type="button" class="btn btn-primary" id="import-whiteList">import presale sale whitelist</button>
+                </div>
+              </div> 
+            </div>
+            <div class="tab-pane fade" id="publicSaleWhitelistInfo">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <h3>public sale</h3>
+                  <textarea class="form-control" name="publicSalewhitelistToUpload" id="publicSalewhitelistToUpload">
+                  </textarea>
+                  <button type="button" class="btn btn-primary" id="import-publicSale-whiteList">import public sale whitelist</button>
+                </div>
+              </div> 
             </div>
           </div>
         </div>
       </div>
     </div>
-    
 
+  
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
     <script src="js/web3.min.js"></script>
     <script src="js/truffle-contract.js"></script>
     <script src="js/app.js"></script>
