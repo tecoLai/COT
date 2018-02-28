@@ -13,7 +13,7 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 
 	//the default total tokens
 	//契約オーナー最初持っているトークン量、トークン最大発行量-10億個、default:1000000000
-	uint256 public constant _totalSupply = 1000000000*10**18; 
+	uint256 public constant _totalSupply = (10**9)*10**18; 
 
 	//契約オーナーアドレス
 	address public ownerWallet;
@@ -24,6 +24,8 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	uint256 public preSale_endTime;
 	uint256 public publicSale_startTime;
 	uint256 public publicSale_endTime;
+
+	//プレミアムセール期間とプレセール期間に、最低限送金ETH
 	uint256 public lowest_weiAmount;
 
 	function COTCoinCrowdsale(uint256 _premiumSale_startTime, uint256 _premiumSale_endTime, uint256 _preSale_startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _publicSale_endTime, uint256 _token_lockUp_releaseTime, uint256 _rate, uint256 _lowest_weiAmount, address _wallet) public
@@ -43,11 +45,7 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	}
 
 	function createTokenContract() internal returns(MintableToken){
-		ownerMintableToken = new COTCoin(lockUpTime);
-
-		//send all of token to owner in the begining.
-		//最初的に、契約生成するときに全部トークンは契約オーナーに上げる
-		ownerMintableToken.mint(msg.sender, _totalSupply);
+		ownerMintableToken = new COTCoin(msg.sender, _totalSupply, lockUpTime);
 
 		return ownerMintableToken;
 	}
@@ -115,7 +113,7 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	    // update state
 	    weiRaised = weiRaised.add(weiAmount);
 
-	    require(ownerMintableToken.transferToken(ownerWallet, beneficiary, tokens));
+	    require(ownerMintableToken.sellToken(ownerWallet, beneficiary, tokens));
 
 	    TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
 
@@ -131,13 +129,11 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	function preSaleDiscount(uint256 _weiAmount, uint256 basic_tokens)public pure returns (uint256){
 		uint256 discounted_token;
 
-		if(_weiAmount < 25*10**18){
-			discounted_token = 0;
-		}else if(_weiAmount < 41.6668*10**18){
+		if(_weiAmount < 41.66*10**18){
 			discounted_token = basic_tokens*100/95; //5% discount
-		}else if(_weiAmount < 83.3335*10**18){
+		}else if(_weiAmount < 83.33*10**18){
 			discounted_token = basic_tokens*10/9; //10% discount
-		}else if(_weiAmount < 250.0001*10**18){
+		}else if(_weiAmount < 250*10**18){
 			discounted_token = basic_tokens*10/8; //20% discount
 		}else{
 			discounted_token = basic_tokens*10/7; //30% discount
@@ -154,13 +150,11 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	function premiumSaleDiscount(uint256 _weiAmount, uint256 basic_tokens)public pure returns (uint256){
 		uint256 discounted_token;
 
-		if(_weiAmount < 25*10**18){
-			discounted_token = 0;
-		}else if(_weiAmount < 41.6668*10**18){
+		if(_weiAmount < 41.66*10**18){
 			discounted_token = basic_tokens*100/95; //5% discount
-		}else if(_weiAmount < 83.3335*10**18){
+		}else if(_weiAmount < 83.33*10**18){
 			discounted_token = basic_tokens*10/9; //10% discount
-		}else if(_weiAmount < 250.0001*10**18){
+		}else if(_weiAmount < 250*10**18){
 			discounted_token = basic_tokens*10/8; //20% discount
 		}else{
 			discounted_token = basic_tokens*10/6; //40% discount
@@ -178,4 +172,12 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 		require( _newLockUpTime > now );
 		return ownerMintableToken.updateLockupTime(_newLockUpTime);
 	}	
+
+	/**
+	* @dev called for get status of pause.
+	*/
+	function ispause() public view returns(bool){
+		return paused;
+	}
+
 }

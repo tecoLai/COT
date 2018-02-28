@@ -357,13 +357,21 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       await this.crowdsale.buyTokens(owner, { value: value, from: owner }).should.be.rejectedWith(EVMRevert);
     });
 
-    it('should reject payments after pre sale-start if user is in premium sale whitelist', async function () {
+    it('should reject payments after premium sale-start if user is in pre sale whitelist', async function () {
       await increaseTimeTo(this.premiumSales_startTime);
       const whitelist = [ purchaser,purchaser2];// add users and owner into whitelist
-      await this.crowdsale.importList(whitelist, 3);       
+      await this.crowdsale.importList(whitelist, 1);       
       await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
       await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
     });     
+
+    it('should reject payments after premium sale-start if user is in public sale whitelist', async function () {
+      await increaseTimeTo(this.premiumSales_startTime);
+      const whitelist = [ purchaser,purchaser2];// add users and owner into whitelist
+      await this.crowdsale.importList(whitelist, 2);       
+      await this.crowdsale.sendTransaction({ value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
+      await this.crowdsale.buyTokens(purchaser, { value: value, from: purchaser }).should.be.rejectedWith(EVMRevert);
+    });    
 
     it('should reject payments after premium sale-start if user not in premium sale whitelist', async function () {
       await increaseTimeTo(this.premiumSales_startTime);
@@ -378,14 +386,14 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser3 }).should.be.fulfilled;
     });
 
-    it('should accept payments after pre sale-start if user in premium salewhitelist', async function () {
+    it('should accept payments after pre sale-start if user in premium sale whitelist', async function () {
       await increaseTimeTo(this.preSales_startTime);
       const whitelist = [purchaser,purchaser4];// add users into whitelist
       await this.crowdsale.importList(whitelist, 3);
       await this.crowdsale.sendTransaction({ value: ether(25), from: purchaser4 }).should.be.fulfilled;
     });
 
-    it('should accept payments after public sale-start if user in premium salewhitelist', async function () {
+    it('should accept payments after public sale-start if user in premium sale whitelist', async function () {
       await increaseTimeTo(this.publicSales_startTime);
       const whitelist = [purchaser,purchaser3];// add users into whitelist
       await this.crowdsale.importList(whitelist, 3);

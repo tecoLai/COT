@@ -49,6 +49,8 @@ App = {
 
     ).then(function(){
         App.getBalances();
+        App.handleGetPauseStatus();
+        $( "#get-lockup-time" ).trigger( "click" );
       
     });
 
@@ -56,6 +58,8 @@ App = {
   },
 
   bindEvents: function() {
+    
+    $(document).on('click', '#update-balance', App.getBalances);
     $(document).on('click', '#transferButton', App.handleTransfer);
     $(document).on('click', '#pause', App.handlePause);
     $(document).on('click', '#unpause', App.handleUnPause);
@@ -68,9 +72,13 @@ App = {
     $(document).on('click', '#get-lockup-time', App.handleGetLockTime);
     $(document).on('click', '#update-lockup-time', App.handleUpdateLockTime);
   },
+
+
   handleUpdateLockTime: function(event) {
     event.preventDefault();
     console.log('updating token locktime');
+    $('#locktime_error').text('');
+    $('#locktime_error_block').addClass("invisible");    
     var COTCoinCrowdsaleInstance;
 
     App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
@@ -79,59 +87,30 @@ App = {
       var new_lockup_time = $('#lock_time_input').val();
       var timestamp = new Date(new_lockup_time).getTime();
       if( isNaN(timestamp)){
-        console.log('format error');
-        return;
+        $('#locktime_error').text('format error');
+        $('#locktime_error_block').removeClass("invisible");
+        return false;
       }
       timestamp = timestamp / 1000;
       console.log(timestamp);
       return COTCoinCrowdsaleInstance.updateLockupTime(timestamp);
 
     }).then(function(result){
+      if(result != false){
         console.log('update lockup time success');
+      }
 
     }).catch(function(err){
-      console.log(err.message);
+      $('#locktime_error').text(err.message);
+      $('#locktime_error_block').removeClass("invisible");      
     });
-
-
-/*
-    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-      COTCoinCrowdsaleInstance = instance;
-
-      COTCoinCrowdsaleInstance.token().then(function(addr){
-        tokenAddress = addr;
-        return tokenAddress;
-
-      }).then(function(tokenAddress_data){
-
-        var COTCoinInstance;
-        COTCoinInstance = App.contracts.COTCoin.at(tokenAddress_data);
-        var new_lockup_time = $('#lock_time_input').val();
-        var timestamp = new Date(new_lockup_time).getTime();
-        if( isNaN(timestamp)){
-          console.log('format error');
-          return;
-        }
-        timestamp = timestamp / 1000;
-        console.log(timestamp);
-        return COTCoinInstance.updateLockupTime(timestamp);
-
-      }).then(function(result){
-        console.log('update lockup time success');
-
-      }).catch(function(err) {
-        console.log(err.message);
-      });
-
-    }).catch(function(err){
-      console.log(err.message);
-    });
-*/
   },
 
   handleGetLockTime: function(event) {
     event.preventDefault();
     console.log('get token locktime');
+    $('#locktime_error').text('');
+    $('#locktime_error_block').addClass("invisible");    
     var COTCoinCrowdsaleInstance;
 
     App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
@@ -150,33 +129,59 @@ App = {
 
       }).then(function(lockup_time_result){
         var lockup_timestamp = lockup_time_result.toString(10);
-
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         var timestamp = new Date(parseInt(lockup_timestamp)*1000);
-        var month = months[timestamp.getMonth()];
+        var year = timestamp.getFullYear();
+        var month = timestamp.getMonth() + 1;
         var date = timestamp.getDate();
         var hour = timestamp.getHours();
         var min = timestamp.getMinutes();
         var sec = timestamp.getSeconds();
-        var time = date + ' ' + month + ' ' +  hour + ':' + min + ':' + sec ;
+        var time = year + '/' + month + '/' +  date + ' ' + hour + ':' + min + ':' + sec ;
         console.log(lockup_timestamp);
-        console.log(time);
+        $("#locktime_info").text(time);
 
       }).catch(function(err) {
-        console.log(err.message);
+        $('#locktime_error').text(err.message);
+        $('#locktime_error_block').removeClass("invisible");  
       });
 
     }).catch(function(err){
-      console.log(err.message);
+      $('#locktime_error').text(err.message);
+      $('#locktime_error_block').removeClass("invisible");  
     });
 
   },
 
-  handlePause: function(event) {
-    event.preventDefault();
-    console.log('pausing sale');
+  handleGetPauseStatus: function() {
+
+    console.log('get pause status');
     var COTCoinCrowdsaleInstance;
 
+    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+      COTCoinCrowdsaleInstance = instance;
+
+      return COTCoinCrowdsaleInstance.ispause();
+
+    }).then(function(result){
+        $( "#pause" ).hide();
+        $( "#unpause" ).hide();  
+        if(result == false){
+          $('#pausedStatus').text("Sale Running");
+          $( "#pause" ).show();
+        }else{
+          $('#pausedStatus').text("Sale Stop");
+          $( "#unpause" ).show();
+        }
+    }).catch(function(err){
+      console.log(err.message);
+    });
+  },
+
+  handlePause: function(event) {
+    event.preventDefault();
+    $( "#get-pause-status" ).hide();
+    console.log('pausing sale');
+    var COTCoinCrowdsaleInstance;
     App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
       COTCoinCrowdsaleInstance = instance;
       return COTCoinCrowdsaleInstance.pause();
@@ -184,26 +189,36 @@ App = {
     }).then(function(result){
       console.log('sale pause!');
       console.log(result);
+      $( "#pause" ).hide();
+      $( "#unpause" ).hide();
+      $( "#unpause" ).show();
+      $( "#get-pause-status" ).show();
+      $('#pausedStatus').text("Sale Stop");
     }).catch(function(err){
       console.log(err.message);
-    });
+    });      
+    
   },
 
   handleUnPause: function(event) {
     event.preventDefault();
     console.log('starting sale');
     var COTCoinCrowdsaleInstance;
-
     App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
       COTCoinCrowdsaleInstance = instance;
       return COTCoinCrowdsaleInstance.unpause();
 
     }).then(function(result){
       console.log('sale start!');
+      $( "#pause" ).hide();
+      $( "#unpause" ).hide();   
+      $( "#pause" ).show();
       console.log(result);
+      $('#pausedStatus').text("Sale Running");
     }).catch(function(err){
       console.log(err.message);
     });
+    
   },
 
   handleTransferToken: function(event) {
@@ -280,7 +295,8 @@ App = {
   handleImportWhiteList: function(event){
     event.preventDefault();
     console.log(' import pre sale whitelist');
-
+    $('#privateSaleWhitelistInfo_error').text('');
+    $('#privateSaleWhitelistInfo_error_block').addClass("invisible");
     var WhiteListInstance;
 
     web3.eth.getAccounts(function(error, accounts) {
@@ -288,58 +304,57 @@ App = {
         console.log(error);
       }
 
-/*
-      test user
-      var users = ["0xf17f52151ebef6c7334fad080c5704d77216b732",
-      "0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef",
-      "0x6330a553fc93768f612722bb8c2ec78ac90b3bbc",
-      "0x5aeda56215b167893e80b4fe645ba6d5bab767de"];
-*/
-
       var new_list = [];
       var whitelistFile = $.trim($('#whitelistToUpload').val());
 
       if(whitelistFile == ''){
-        alert('no content');
+        $('#privateSaleWhitelistInfo_error').text('no input content');
+        $('#privateSaleWhitelistInfo_error_block').removeClass("invisible");
       }else{
+        try{
+          var whitelistFile_json = jQuery.parseJSON(whitelistFile);
+          
+          for(var json_index = 0; json_index < whitelistFile_json.length; json_index++){
+            new_list.push(whitelistFile_json[json_index]);
+          }
+          
+          var whitelist_list = [];
+          for(var index = 0; index < new_list.length; index+=100){
+            whitelist_list.push(new_list.slice(index,index+100));
+          }
 
-        var whitelistFile_json = jQuery.parseJSON(whitelistFile);
-        
-        for(var json_index = 0; json_index < whitelistFile_json.length; json_index++){
-          new_list.push(whitelistFile_json[json_index]);
+          console.log(whitelist_list);
+
+          App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+            WhiteListInstance = instance;
+
+            for(var list_index = 0; list_index < whitelist_list.length; list_index ++ ){
+              var importing_data = whitelist_list[list_index];
+              WhiteListInstance.importList(whitelist_list[list_index], 1).then(function(result){
+                console.log(result);
+              }).catch(function(err) {
+                $('#privateSaleWhitelistInfo_error').text(err.message);
+                $('#privateSaleWhitelistInfo_error_block').removeClass("invisible");
+              });
+            }  
+
+          }).catch(function(err) {
+              $('#privateSaleWhitelistInfo_error').text(err.message);
+              $('#privateSaleWhitelistInfo_error_block').removeClass("invisible");
+          });
+        }catch(err){
+          $('#privateSaleWhitelistInfo_error').text('json format error');
+          $('#privateSaleWhitelistInfo_error_block').removeClass("invisible");
         }
-        
-        var whitelist_list = [];
-        for(var index = 0; index < new_list.length; index+=100){
-          whitelist_list.push(new_list.slice(index,index+100));
-        }
-
-        console.log(whitelist_list);
-
-        App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-          WhiteListInstance = instance;
-
-          for(var list_index = 0; list_index < whitelist_list.length; list_index ++ ){
-            var importing_data = whitelist_list[list_index];
-            WhiteListInstance.importList(whitelist_list[list_index], 1).then(function(result){
-              console.log(result);
-            }).catch(function(err) {
-              console.log(err.message);
-            });
-          }  
-
-        }).catch(function(err) {
-          console.log(err.message);
-        });
       }
-
     });    
   },  
 
   handleImportPublicSaleWhiteList: function(event){
     event.preventDefault();
     console.log(' import public sale whitelist');
-
+    $('#publicSaleWhitelistInfo_error').text('');
+    $('#publicSaleWhitelistInfo_error_block').addClass("invisible");
     var WhiteListInstance;
 
     web3.eth.getAccounts(function(error, accounts) {
@@ -347,54 +362,57 @@ App = {
         console.log(error);
       }
 
-/*
-      test user
-      var users = ["0x821aEa9a577a9b44299B9c15c88cf3087F3b5544",
-      "0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2"];
-*/
-
       var new_list = [];
       var publicSalewhitelistFile = $.trim($('#publicSalewhitelistToUpload').val());
       if(publicSalewhitelistFile == ''){
-        alert('no content');
+        $('#publicSaleWhitelistInfo_error').text('no input content');
+        $('#publicSaleWhitelistInfo_error_block').removeClass("invisible");
       }else{
-        var publicSalewhitelistFile_whitelistFile_json = jQuery.parseJSON(publicSalewhitelistFile);
-        
-        for(var json_index = 0; json_index < publicSalewhitelistFile_whitelistFile_json.length; json_index++){
-          new_list.push(publicSalewhitelistFile_whitelistFile_json[json_index]);
+        try{
+          var publicSalewhitelistFile_whitelistFile_json = jQuery.parseJSON(publicSalewhitelistFile);
+          
+          for(var json_index = 0; json_index < publicSalewhitelistFile_whitelistFile_json.length; json_index++){
+            new_list.push(publicSalewhitelistFile_whitelistFile_json[json_index]);
+          }
+          
+          var publicSale_whitelist_list = [];
+          for(var index = 0; index < new_list.length; index+=100){
+            publicSale_whitelist_list.push(new_list.slice(index,index+100));
+          }
+
+          console.log(publicSale_whitelist_list);
+
+          App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+            WhiteListInstance = instance;
+
+            for(var list_index = 0; list_index < publicSale_whitelist_list.length; list_index ++ ){
+              var importing_data = publicSale_whitelist_list[list_index];
+              WhiteListInstance.importList(publicSale_whitelist_list[list_index], 2).then(function(result){
+                console.log(result);
+              }).catch(function(err) {
+                $('#publicSaleWhitelistInfo_error').text(err.message);
+                $('#publicSaleWhitelistInfo_error_block').removeClass("invisible");
+              });
+            }  
+
+          }).catch(function(err) {
+              $('#publicSaleWhitelistInfo_error').text(err.message);
+              $('#publicSaleWhitelistInfo_error_block').removeClass("invisible");
+          });        
+        }catch(err){
+          $('#publicSaleWhitelistInfo_error').text('json format error');
+          $('#publicSaleWhitelistInfo_error_block').removeClass("invisible");
         }
-        
-        var publicSale_whitelist_list = [];
-        for(var index = 0; index < new_list.length; index+=100){
-          publicSale_whitelist_list.push(new_list.slice(index,index+100));
-        }
-
-        console.log(publicSale_whitelist_list);
-
-        App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-          WhiteListInstance = instance;
-
-          for(var list_index = 0; list_index < publicSale_whitelist_list.length; list_index ++ ){
-            var importing_data = publicSale_whitelist_list[list_index];
-            WhiteListInstance.importList(publicSale_whitelist_list[list_index], 2).then(function(result){
-              console.log(result);
-            }).catch(function(err) {
-              console.log(err.message);
-            });
-          }  
-
-        }).catch(function(err) {
-          console.log(err.message);
-        });
       }  
-
     });    
   },  
 
   handleImportPremiumSaleWhiteList: function(event){
     event.preventDefault();
     console.log(' import JP premium sale whitelist');
-
+    $('#premiumSaleWhitelistInfo_error').text('');
+    $('#premiumSaleWhitelistInfo_error_block').addClass("invisible");
+    premiumSaleWhitelistInfo_error_block
     var WhiteListInstance;
 
     web3.eth.getAccounts(function(error, accounts) {
@@ -405,36 +423,43 @@ App = {
       var new_list = [];
       var premiumSalewhitelistFile = $.trim($('#premiumSalewhitelistToUpload').val());
       if(premiumSalewhitelistFile == ''){
-        alert('no content');
+        $('#premiumSaleWhitelistInfo_error').text('no input content');
+        $('#premiumSaleWhitelistInfo_error_block').removeClass("invisible");
       }else{
-        var premiumSalewhitelistFile_whitelistFile_json = jQuery.parseJSON(premiumSalewhitelistFile);
-        
-        for(var json_index = 0; json_index < premiumSalewhitelistFile_whitelistFile_json.length; json_index++){
-          new_list.push(premiumSalewhitelistFile_whitelistFile_json[json_index]);
+        try{
+          var premiumSalewhitelistFile_whitelistFile_json = jQuery.parseJSON(premiumSalewhitelistFile);
+          for(var json_index = 0; json_index < premiumSalewhitelistFile_whitelistFile_json.length; json_index++){
+            new_list.push(premiumSalewhitelistFile_whitelistFile_json[json_index]);
+          }
+          
+          var premiumSale_whitelist_list = [];
+          for(var index = 0; index < new_list.length; index+=100){
+            premiumSale_whitelist_list.push(new_list.slice(index,index+100));
+          }
+
+          console.log(premiumSale_whitelist_list);
+
+          App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+            WhiteListInstance = instance;
+
+            for(var list_index = 0; list_index < premiumSale_whitelist_list.length; list_index ++ ){
+              var importing_data = premiumSale_whitelist_list[list_index];
+              WhiteListInstance.importList(premiumSale_whitelist_list[list_index], 3).then(function(result){
+                console.log(result);
+              }).catch(function(err) {
+                $('#premiumSaleWhitelistInfo_error').text(err.message);
+                $('#premiumSaleWhitelistInfo_error_block').removeClass("invisible");
+              });
+            }  
+
+          }).catch(function(err) {
+              $('#premiumSaleWhitelistInfo_error').text(err.message);
+              $('#premiumSaleWhitelistInfo_error_block').removeClass("invisible");
+          });
+        }catch(err){
+          $('#premiumSaleWhitelistInfo_error').text('json format error');
+          $('#premiumSaleWhitelistInfo_error_block').removeClass("invisible");
         }
-        
-        var premiumSale_whitelist_list = [];
-        for(var index = 0; index < new_list.length; index+=100){
-          premiumSale_whitelist_list.push(new_list.slice(index,index+100));
-        }
-
-        console.log(premiumSale_whitelist_list);
-
-        App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-          WhiteListInstance = instance;
-
-          for(var list_index = 0; list_index < premiumSale_whitelist_list.length; list_index ++ ){
-            var importing_data = premiumSale_whitelist_list[list_index];
-            WhiteListInstance.importList(premiumSale_whitelist_list[list_index], 3).then(function(result){
-              console.log(result);
-            }).catch(function(err) {
-              console.log(err.message);
-            });
-          }  
-
-        }).catch(function(err) {
-          console.log(err.message);
-        });
       }  
 
     });    
@@ -442,10 +467,9 @@ App = {
 
   handleCheckWhiteList: function(event){
     event.preventDefault();
-    console.log(' address check');
-
+    
+    $('#whitelist_search_block').addClass("invisible");
     var WhiteListInstance;
-
     web3.eth.getAccounts(function(error, accounts) {
       if (error) {
         console.log(error);
@@ -454,13 +478,23 @@ App = {
       var account = accounts[0];
       
       var address = $('#address_input').val();
-      console.log(address);
       App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
         WhiteListInstance = instance;
         return WhiteListInstance.checkList(address);
       }).then(function(result) {
-         console.log(result.toString(10));
-
+        var whitelist_search_result = result.toString(10);
+        if(whitelist_search_result == "0"){
+          $('#whitelist_search_result').text('user is not in whitslist.');
+        }else if(whitelist_search_result == "1"){
+          $('#whitelist_search_result').text('user is in pre sale whitslist.');
+        }else if(whitelist_search_result == "2"){
+          $('#whitelist_search_result').text('user is in public sale whitslist.');
+        }else if(whitelist_search_result == "3"){
+          $('#whitelist_search_result').text('user is in premium sale whitslist.');
+        }else{
+          $('#whitelist_search_result').text('please try again');
+        }
+        $('#whitelist_search_block').removeClass("invisible");
       }).catch(function(err) {
         console.log(err.message);
       });
@@ -469,11 +503,11 @@ App = {
 
   handleCheckHistory: function(event){
     event.preventDefault();
-    
+    var table_history;
     var token_address = document.getElementById('tokenAddress').innerHTML;
-    console.log('contract address history　', token_address);
+    console.log('contract address history　generate', token_address);
     var HistoryInstance;
-      contractAddress = token_address;
+    contractAddress = token_address;
       web3.eth.filter({
         address: contractAddress,
         fromBlock: 1,
@@ -491,8 +525,12 @@ App = {
           console.log(result);
         })
 */
+        $('#token_history_table').DataTable().destroy();
+        $('#token_history_tbody').empty();
+        table_history = $('#token_history_table').DataTable();
         for(var index = 0; index < result.length; index ++){
-
+          
+          var time;
           //console.log(result[index]);
           //console.log(result[index].blockHash);
           //console.log(result[index].transactionHash);
@@ -501,40 +539,45 @@ App = {
             //transaction time get
             web3.eth.getBlock(result[index].blockHash, function(error, result){
                 if(!error){
-                  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                   var timestamp = new Date(parseInt(result.timestamp)*1000);
-                  var month = months[timestamp.getMonth()];
+                  var year = timestamp.getFullYear();
+                  var month = timestamp.getMonth() + 1;
                   var date = timestamp.getDate();
                   var hour = timestamp.getHours();
                   var min = timestamp.getMinutes();
                   var sec = timestamp.getSeconds();
-                  var time = date + ' ' + month + ' ' +  hour + ':' + min + ':' + sec ;
+                  time =  year + '/' + month + '/' +  date + ' ' + hour + ':' + min + ':' + sec ;
                   //console.log(result);
-                  console.log(time);
+                  //console.log(time);
+                  return time;
                 }
                 else{
-                    console.error(error);
+                  console.error(error);
                 }    
+                
             })
             ).then(function(){
 
-              //buyer address, eth get  
-              web3.eth.getTransaction(result[index].transactionHash, function(error, result){
-                if(!error){
-                  var from = result.from;
-                  var to = result.to;
-                  var value = result.value;
-                  value = value.toString(10);
-                  var ether_amount =  web3.fromWei(value, "ether");
-                  var receipt = 'from ' + from + ' to ' + to + '/ send ' + ether_amount;
-                  console.log(receipt);
-                }
-                else{
-                    console.error(error);
-                }
-              })
+            //buyer address, eth get  
+            web3.eth.getTransaction(result[index].transactionHash, function(error, result){
+              if(!error){
+                var from = result.from;
+                var to = result.to;
+                var value = result.value;
+                value = value.toString(10);
+                var ether_amount =  web3.fromWei(value, "ether");
+                var receipt = 'from ' + from + ' to ' + to + '/ send ' + ether_amount;
 
+                //console.log(receipt);
+                table_history.row.add([
+                  time, from, to, ether_amount
+                ]).draw();
+              }
+              else{
+                console.error(error);
+              }
             })
+          })
         }
       })
   },  
@@ -619,6 +662,7 @@ App = {
 };
 
 $(function() {
+  var dataTable ;
   $(window).load(function() {
     var ownerAccount = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57";
     App.init(ownerAccount);

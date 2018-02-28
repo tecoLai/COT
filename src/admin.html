@@ -32,6 +32,7 @@
           <ul class="nav nav-tabs">
 
             <li class="active"><a href="#tokenBalance" data-toggle="tab">Token balance</a></li>
+            <li><a href="#tokenHistory" data-toggle="tab">Token history</a></li>
             <li><a href="#saleStatus" data-toggle="tab">Sale status</a></li>
             <li><a href="#lockupTimeInfo" data-toggle="tab">Lockup time info</a></li>
 
@@ -39,9 +40,9 @@
               <a href="#" data-toggle="dropdown">Whitelist <span class="caret"></span></a>
               <ul class="dropdown-menu" role="menu">
                 <li><a href="#checkWhitelistInfo" data-toggle="tab">User search</a></li>
-                <li><a href="#premiumSaleWhitelistInfo" data-toggle="tab">Premium sale</a></li>
-                <li><a href="#privateSaleWhitelistInfo" data-toggle="tab">Private sale</a></li>
-                <li><a href="#publicSaleWhitelistInfo" data-toggle="tab">Public sale</a></li>
+                <li><a href="#premiumSaleWhitelistInfo" data-toggle="tab">Import premium sale</a></li>
+                <li><a href="#privateSaleWhitelistInfo" data-toggle="tab">Import private sale</a></li>
+                <li><a href="#publicSaleWhitelistInfo" data-toggle="tab">Import public sale</a></li>
               </ul>
             </li>
           </ul>
@@ -57,13 +58,44 @@
                   <strong>token remain Balance</strong>: <span id="remainBalance"></span> COT<br/><br/>
                   <strong>Sale token remain Balance</strong>: <span id="saleRemainBalance"></span> COT<br/><br/>
                   <strong>Holding Balance</strong>: <span id="TTBalance"></span> COT<br/><br/>
-                  <button type="button" class="btn btn-primary" id="check-history">check history</button>
+                  <button type="button" class="btn btn-primary" id="update-balance">
+                    <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+                  </button>                     
                 </div>
               </div>
             </div>
+            <div class="tab-pane fade" id="tokenHistory">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <h4>Token History</h4>
+                  <span id="tokenAddress"></span>
+                  <button type="button" class="btn btn-primary" id="check-history">
+                    <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+                  </button>
+                  <table class="table table-hover" id="token_history_table">
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>ETH</th>
+                      </tr>
+                    </thead>
+                    <tbody id="token_history_tbody">
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>            
             <div class="tab-pane fade" id="saleStatus">
               <div class="row">
                 <div class="col-sm-12 text-center">
+                  <h4>Current Status</h4> 
+                  <div class="col-sm-12">
+                    <p class="text-success" id="pausedStatus"></p>
+                    <hr> 
+                  </div>    
+                           
                   <button type="button" class="btn btn-warning" id="pause">sale pause</button>
                   <button type="button" class="btn btn-success" id="unpause">sale restart</button>
                 </div>
@@ -71,60 +103,101 @@
             </div>
             <div class="tab-pane fade" id="lockupTimeInfo">
               <div class="row">
-                <div class="col-sm-12 text-center">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1">current lockup time</label>
-                  </div>    
+                <div class="col-sm-12 text-center">  
                   <div class="col-sm-12">
-                    <button type="button" class="btn btn-primary" id="get-lockup-time">get token lock time</button>
-                  </div>                                  
+                    <h4>Token lockup time</h4>
+                    <p class="text-success" id="locktime_info"></p>
+                    <button type="button" class="btn btn-primary" id="get-lockup-time">
+                      <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+                    </button>      
+                    <hr>         
+                  </div>                 
                   <div class="form-group">
-                    <label for="exampleInputEmail1">New lockup time</label>
-                    <input type="text" class="form-control" id="lock_time_input" placeholder="YYYY/MM/DD hh:mm:ss">
+                    <h4 for="exampleInputEmail1">New lockup time</h4>
+                    <div class="col-sm-6 col-sm-offset-3">
+                      <input type="text" class="form-control" id="lock_time_input" placeholder="YYYY/MM/DD hh:mm:ss">
+                    </div>
                   </div>
                   <div class="col-sm-12">
+                    <hr> 
                     <button type="button" class="btn btn-success" id="update-lockup-time">update token lock time</button>
+                    <hr> 
                   </div>
+                  <div class="col-sm-12">
+                    <div class="alert alert-warning invisible" id="locktime_error_block" role="alert">
+                      <h4 class="alert-heading">Error</h4>
+                      <p id="locktime_error"></p>
+                    </div>
+                  </div>                  
                 </div>
               </div> 
             </div>
             <div class="tab-pane fade" id="checkWhitelistInfo">
               <div class="row">
                 <div class="col-sm-12 text-center">
-                  <h3>User search</h3>
-                  <strong>Address</strong>: 
-                  <input type="text" class="form-control" id="address_input" placeholder="please enter user address">              
-                  <button type="button" class="btn btn-primary" id="check-whitelist">serach user</button>
+                  <h4>User search</h4>
+                  <div class="col-sm-12">
+                    <div class="col-sm-6 col-sm-offset-3">
+                      <input type="text" class="form-control" id="address_input" placeholder="please enter user address">    
+                    </div> 
+                  </div>
+                      
+                  <div class="col-sm-12">
+                    <hr> 
+                    <button type="button" class="btn btn-primary" id="check-whitelist">serach user</button>
+                    <hr>
+                  </div>
+                  <div class="col-sm-12">
+                    <div class="alert alert-success invisible" id="whitelist_search_block" role="alert">
+                      <h4 class="alert-heading">Search result</h4>
+                      <p id="whitelist_search_result"></p>
+                    </div>
+                  </div>
                 </div>
               </div> 
             </div>         
             <div class="tab-pane fade" id="premiumSaleWhitelistInfo">
               <div class="row">
                 <div class="col-sm-12 text-center">
-                  <h3>premium sale</h3>
-                  <textarea class="form-control" name="premiumSalewhitelistToUpload" id="premiumSalewhitelistToUpload">
-                  </textarea>
+                  <h4>Premium sale</h4>
+                  <textarea name="premiumSalewhitelistToUpload" id="premiumSalewhitelistToUpload" class="form-control" cols="20" rows="10" placeholder='please use json format &#10["address 1", "address 2", "address 3",...]'></textarea>
+                  <hr>
                   <button type="button" class="btn btn-primary" id="import-premiumSale-whiteList">import premium sale whitelist</button>
+                  <hr>      
+                  <div class="alert alert-warning invisible" role="alert" id="premiumSaleWhitelistInfo_error_block">
+                    <h4 class="alert-heading">Error</h4>
+                    <p id="premiumSaleWhitelistInfo_error"></p>
+                  </div>
                 </div>
               </div> 
             </div>
             <div class="tab-pane fade" id="privateSaleWhitelistInfo">
               <div class="row">
                 <div class="col-sm-12 text-center">
-                  <h3>presale sale</h3>
-                  <textarea class="form-control" name="whitelistToUpload" id="whitelistToUpload">
-                  </textarea>
+                  <h4>Presale sale</h4>
+                  <textarea class="form-control" name="whitelistToUpload" id="whitelistToUpload" cols="20" rows="10" placeholder='please use json format &#10["address 1", "address 2", "address 3",...]'></textarea>
+                  <hr>
                   <button type="button" class="btn btn-primary" id="import-whiteList">import presale sale whitelist</button>
+                  <hr>      
+                  <div class="alert alert-warning invisible" role="alert" id="privateSaleWhitelistInfo_error_block">
+                    <h4 class="alert-heading">Error</h4>
+                    <p id="privateSaleWhitelistInfo_error"></p>
+                  </div>                  
                 </div>
               </div> 
             </div>
             <div class="tab-pane fade" id="publicSaleWhitelistInfo">
               <div class="row">
                 <div class="col-sm-12 text-center">
-                  <h3>public sale</h3>
-                  <textarea class="form-control" name="publicSalewhitelistToUpload" id="publicSalewhitelistToUpload">
-                  </textarea>
+                  <h4>Public sale</h4>
+                  <textarea class="form-control" name="publicSalewhitelistToUpload" id="publicSalewhitelistToUpload" cols="20" rows="10" placeholder='please use json format &#10["address 1", "address 2", "address 3",...]'></textarea>
+                  <hr>
                   <button type="button" class="btn btn-primary" id="import-publicSale-whiteList">import public sale whitelist</button>
+                  <hr>      
+                  <div class="alert alert-warning invisible" role="alert" id="publicSaleWhitelistInfo_error_block">
+                    <h4 class="alert-heading">Error</h4>
+                    <p id="publicSaleWhitelistInfo_error"></p>
+                  </div>  
                 </div>
               </div> 
             </div>
@@ -140,6 +213,11 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap.min.js"></script>
+
 
     <script src="js/web3.min.js"></script>
     <script src="js/truffle-contract.js"></script>
