@@ -29,6 +29,8 @@
     "chai-bignumber": "^2.0.2",
     "gulp": "^3.9.1",
     "gulp-util": "^3.0.8",
+    "jquery": "^3.3.1",
+    "jsdom": "^11.6.2",
     "zeppelin-solidity": "^1.5.0"
   }
 }

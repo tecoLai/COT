@@ -598,6 +598,9 @@ App = {
       App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
         COTCoinCrowdsaleInstance = instance;
 
+        //get contract address
+        $("#contractAddress").text(COTCoinCrowdsaleInstance.address);
+
         COTCoinCrowdsaleInstance.token().then(function(addr){
           tokenAddress = addr;
           $("#tokenAddress").text(tokenAddress);
