@@ -3,18 +3,16 @@
 *   Run this command line as below
 *		truffle exec scripts/unPauseSale.js [--network <name>]
 */
-var COTCoinCrowdsale = artifacts.require("./COTCoinCrowdsale.sol");
-module.exports = function(callback) {
-	//console.log('start to restart sale');
-	var COTCoinCrowdsaleInstance;
-	COTCoinCrowdsale.deployed().then(function(instance){
-		COTCoinCrowdsaleInstance = instance;
-		return COTCoinCrowdsaleInstance.unpause();
-	}).then(function(result){
-		//console.log('sale started!');
-		console.log(result);
+var PausableToken = artifacts.require("./PausableToken.sol");
 
-	}).catch(function(err) {
-		console.log(err.message);
-	});
+module.exports = function(callback) {
+    PausableToken.deployed().then(function(PausableTokenInstance) {
+      return PausableTokenInstance.unpause();
+
+    }).then(function(result){
+      console.log(result);
+    }).catch(function(err){
+      console.log(err.message);
+    });  
 }
+

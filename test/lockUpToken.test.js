@@ -16,10 +16,13 @@ const should = require('chai')
 
 const COTCoinCrowdsale = artifacts.require("./COTCoinCrowdsale.sol");
 const COTCoin = artifacts.require("./COTCoin.sol");
+const WhiteList = artifacts.require("./WhiteList.sol");
+const Lockup = artifacts.require("./Lockup.sol");
+const PausableToken = artifacts.require("./PausableToken.sol");
 
-
-contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3]) {
+contract('COTCoinCrowdsale', function ([owner, unsale_owner, purchaser, purchaser2, purchaser3]) {
   const wallet = owner;
+  const unsale_owner_wallet = unsale_owner;
   const rate = event_parameter.rate();
   const totalSupply = event_parameter.totalSupply();
   const randomNum = event_parameter.randomNum();
@@ -44,7 +47,16 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     this.afterEndTime = event_period.afterEndTime(this.publicSales_endTime);
     this.lockUpTime = event_period.lockUpTime(this.publicSales_endTime); 
     this.lockUpTime_2 = event_period.lockUpTime(this.lockUpTime); 
-    this.crowdsale = await COTCoinCrowdsale.new(this.premiumSales_startTime, this.premiumSales_endTime, this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, this.lockUpTime, rate, lowest_weiAmount, wallet);   
+    this.whitelist = await WhiteList.new();
+    this.pausableToken = await PausableToken.new();
+    this.lockup = await Lockup.new(this.lockUpTime);
+    this.crowdsale = await COTCoinCrowdsale.new(this.premiumSales_startTime, this.premiumSales_endTime, 
+      this.preSales_startTime, this.preSales_endTime, 
+      this.publicSales_startTime, this.publicSales_endTime, 
+      rate, lowest_weiAmount, 
+      wallet, unsale_owner_wallet, 
+      this.whitelist.address, this.pausableToken.address,
+      this.lockup.address);
     this.token_address = await this.crowdsale.token();
     //console.log(this.token_address);
     this.token = COTCoin.at(this.token_address);
@@ -91,7 +103,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
       await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.fulfilled;
 
-      await this.crowdsale.updateLockupTime(this.lockUpTime_2);
+      await this.lockup.updateLockup(this.lockUpTime_2);
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
       await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.rejectedWith(EVMRevert);
     }); 
@@ -102,7 +114,7 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
       await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.fulfilled;
 
-      await this.crowdsale.updateLockupTime(this.lockUpTime_2);
+      await this.lockup.updateLockup(this.lockUpTime_2);
       await this.token.transfer(purchaser, tokens,{from: owner}).should.be.fulfilled;
       await this.token.transfer(purchaser2, tokens,{from: purchaser}).should.be.rejectedWith(EVMRevert);
 

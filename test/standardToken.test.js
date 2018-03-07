@@ -3,6 +3,7 @@ import { advanceBlock } from './helpers/advanceToBlock';
 import { increaseTimeTo, duration } from './helpers/increaseTime';
 import { event_period } from './helpers/eventPeriod';
 import { event_parameter } from './helpers/eventParameters';
+import token from './helpers/token';
 
 const assertRevert = require('./helpers/assertRevert');
 const BigNumber = web3.BigNumber;
@@ -14,9 +15,13 @@ const should = require('chai')
 
 const COTCoinCrowdsale = artifacts.require("./COTCoinCrowdsale.sol");
 const COTCoin = artifacts.require("./COTCoin.sol");
+const WhiteList = artifacts.require("./WhiteList.sol");
+const Lockup = artifacts.require("./Lockup.sol");
+const PausableToken = artifacts.require("./PausableToken.sol");
 
-contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3]) {
+contract('COTCoinCrowdsale', function ([owner, unsale_owner, purchaser, purchaser2, purchaser3]) {
   const wallet = owner;
+  const unsale_owner_wallet = unsale_owner;
   const rate = event_parameter.rate();
   const totalSupply = event_parameter.totalSupply();
   const lowest_weiAmount = event_parameter.lowest_weiAmount();
@@ -38,7 +43,16 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
     this.afterPreSales_endTime = event_period.afterPreSales_endTime(this.preSales_endTime);
     this.afterEndTime = event_period.afterEndTime(this.publicSales_endTime);
     this.lockUpTime = event_period.lockUpTime(this.publicSales_endTime); 
-    this.crowdsale = await COTCoinCrowdsale.new(this.premiumSales_startTime, this.premiumSales_endTime, this.preSales_startTime, this.preSales_endTime, this.publicSales_startTime, this.publicSales_endTime, this.lockUpTime, rate, lowest_weiAmount, wallet);   
+    this.whitelist = await WhiteList.new();
+    this.pausableToken = await PausableToken.new();
+    this.lockup = await Lockup.new(this.lockUpTime);
+    this.crowdsale = await COTCoinCrowdsale.new(this.premiumSales_startTime, this.premiumSales_endTime, 
+      this.preSales_startTime, this.preSales_endTime, 
+      this.publicSales_startTime, this.publicSales_endTime, 
+      rate, lowest_weiAmount, 
+      wallet, unsale_owner_wallet, 
+      this.whitelist.address, this.pausableToken.address,
+      this.lockup.address);
     this.token_address = await this.crowdsale.token();
     //console.log(this.token_address);
     this.token = COTCoin.at(this.token_address);
@@ -70,11 +84,14 @@ contract('COTCoinCrowdsale', function ([owner, purchaser, purchaser2, purchaser3
   it('should return correct balances after transfer', async function () {
     let tokens = web3.toWei(100, "ether");
 
+    const expect_data = await this.token.balanceOf(owner);
+    var expect = token(expect_data.toNumber(10));
+
     await this.token.transfer(purchaser, tokens);
     let balance0 = await this.token.balanceOf(owner);
     balance0 = balance0.toString(10);
     balance0 = web3.fromWei(balance0, "ether");
-    assert.equal(balance0, (totalSupply-100));
+    assert.equal(balance0, (expect-100));
 
     let balance1 = await this.token.balanceOf(purchaser);
     balance1 = balance1.toString(10);

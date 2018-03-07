@@ -1,22 +1,24 @@
 pragma solidity ^0.4.18;
 
-import './COTCoin.sol';
+import './PausableToken.sol';
 import './WhiteList.sol';
+import './Discount.sol';
 import './CrowdsaleWithLockUp.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
-import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
 
-contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
+contract COTCoinCrowdsale is CrowdsaleWithLockUp{
 	using SafeMath for uint256;
 
-	COTCoin public ownerMintableToken;
+	WhiteList public whiteList;
 
-	//the default total tokens
-	//契約オーナー最初持っているトークン量、トークン最大発行量-10億個、default:1000000000
-	uint256 public constant _totalSupply = (10**9)*10**18; 
+	PausableToken public pausable;
 
-	//契約オーナーアドレス
-	address public ownerWallet;
+	//セール用な契約オーナーアドレス
+	address public saleToken_owner;
+
+	//セール以外用な契約オーナーアドレス
+	address public unsaleToken_owner;
+
 
 	uint256 public premiumSale_startTime;
 	uint256 public premiumSale_endTime;
@@ -28,12 +30,18 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	//プレミアムセール期間とプレセール期間に、最低限送金ETH
 	uint256 public lowest_weiAmount;
 
-	function COTCoinCrowdsale(uint256 _premiumSale_startTime, uint256 _premiumSale_endTime, uint256 _preSale_startTime, uint256 _preSale_endTime, uint256 _publicSale_startTime, uint256 _publicSale_endTime, uint256 _token_lockUp_releaseTime, uint256 _rate, uint256 _lowest_weiAmount, address _wallet) public
-	    CrowdsaleWithLockUp(_premiumSale_startTime, _publicSale_endTime, _rate, _wallet, _token_lockUp_releaseTime)
+	function COTCoinCrowdsale(
+		uint256 _premiumSale_startTime, uint256 _premiumSale_endTime, 
+		uint256 _preSale_startTime, uint256 _preSale_endTime, 
+		uint256 _publicSale_startTime, uint256 _publicSale_endTime, 
+		uint256 _rate, uint256 _lowest_weiAmount, 
+		address _saleToken_wallet, address _unsaleToken_wallet, 
+		address _whiteList_address, address _pauable_address, 
+		address _lockup_address) public
+	    CrowdsaleWithLockUp(_premiumSale_startTime, _publicSale_endTime, _rate, _saleToken_wallet, _unsaleToken_wallet, _lockup_address)
 	{
-	    //As goal needs to be met for a successful crowdsale
-	    //the value needs to less or equal than a cap which is limit for accepted funds
-	    ownerWallet = _wallet;
+	    saleToken_owner = _saleToken_wallet;
+	    unsaleToken_owner = _unsaleToken_wallet;
 	    premiumSale_startTime = _premiumSale_startTime;
 	    premiumSale_endTime = _premiumSale_endTime;
 	    preSale_startTime = _preSale_startTime;
@@ -41,19 +49,17 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	    publicSale_startTime = _publicSale_startTime;
 	    publicSale_endTime = _publicSale_endTime;
 	    lowest_weiAmount = _lowest_weiAmount;
-
+	    whiteList = WhiteList(_whiteList_address);
+	    pausable = PausableToken(_pauable_address);
 	}
-
-	function createTokenContract() internal returns(MintableToken){
-		ownerMintableToken = new COTCoin(msg.sender, _totalSupply, lockUpTime);
-
-		return ownerMintableToken;
-	}
-
 
 	// overriding Crowdsale#buyTokens to　send token to buyer, and don't need to mint token
 	// overriding Crowdsale#buyTokens,トークン上げる方法改修、新しいトークンミントじゃなくて、契約オーナーからトークンを上げる
-	function buyTokens(address beneficiary) public whenNotPaused payable {
+	function buyTokens(address beneficiary) public payable {
+
+		//check that the sale is paused or not
+		//セール販売状況チェック
+		require( pausable.ispause() == false );
 
 		//only pre-salse period and public-sale period that can buy token
 		//トークンを購入する期間はpre-saleとpublic-saleだけ
@@ -63,7 +69,8 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 
 	  	//owner can not buy token
 	  	//オーナーはトークンを購入できないというルール設定
-	    require(beneficiary != ownerWallet);
+	    require(beneficiary != saleToken_owner);
+	    require(beneficiary != unsaleToken_owner);
 
 	    require(validPurchase());
 
@@ -73,12 +80,12 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 	    require( weiAmount >= 0.0001*10**18 );
 
 	    uint256 tokens = weiAmount.mul(rate);
-	    uint8 inWhitelist = checkList(beneficiary);
+	    uint8 inWhitelist = whiteList.checkList(beneficiary);
 
 	    //user should be in white list
 	    //トークンを購入する場合に、white checkListをチェックしなければならない
-	    //1:プレセール, 2:パブリックセール, 3:プレミアムセール
-	    require( (inWhitelist == 1) || (inWhitelist == 2) || (inWhitelist == 3));
+	    //0:white listに入ってない, 1:プレセール, 2:パブリックセール, 3:プレミアムセール
+	    require( inWhitelist != 0);
 
 	    //プレミアム期間
 	    if( (now >= premiumSale_startTime) && (now <= premiumSale_endTime) ){
@@ -88,7 +95,7 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 
 			//should be more than 25 eth
 	    	require(weiAmount >= lowest_weiAmount);
-	    	tokens = premiumSaleDiscount( weiAmount, tokens );
+	    	tokens = Discount.premiumSaleDiscount( weiAmount, tokens );
 		}
 
 		//プレセール期間
@@ -100,84 +107,21 @@ contract COTCoinCrowdsale is CrowdsaleWithLockUp, Pausable, WhiteList{
 
 	    	//should be more than 25 eth
 	    	require(weiAmount >= lowest_weiAmount);		
-	    	tokens = preSaleDiscount( weiAmount, tokens );	
+	    	tokens = Discount.preSaleDiscount( weiAmount, tokens );	
 		}
 
-	    //最低限1個COTを購入しなければなりません。
-	    require( tokens >= 1*10**18 );
-
 	    //小数点切り捨てる
+	    //e.q. if token is 45.01, then it will become 45.
 	    tokens = tokens/10**18;
 		tokens = tokens*10**18;
 
 	    // update state
 	    weiRaised = weiRaised.add(weiAmount);
 
-	    require(ownerMintableToken.sellToken(ownerWallet, beneficiary, tokens));
+	    require(token.sellToken( beneficiary, tokens));
 
 	    TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
 
 	    forwardFunds();
-	}
-
-
-  	/**
-	* @dev Function to give discount when presale
-	* @param _weiAmount The wei amount that buyer send
-	* @return A uint256 that indicates if the operation was successful.
-	*/
-	function preSaleDiscount(uint256 _weiAmount, uint256 basic_tokens)public pure returns (uint256){
-		uint256 discounted_token;
-
-		if(_weiAmount < 41.66*10**18){
-			discounted_token = basic_tokens*100/95; //5% discount
-		}else if(_weiAmount < 83.33*10**18){
-			discounted_token = basic_tokens*10/9; //10% discount
-		}else if(_weiAmount < 250*10**18){
-			discounted_token = basic_tokens*10/8; //20% discount
-		}else{
-			discounted_token = basic_tokens*10/7; //30% discount
-		}
-
-		return discounted_token;
 	}	
-
-  	/**
-	* @dev Function to give discount when premium sale
-	* @param _weiAmount The wei amount that buyer send
-	* @return A uint256 that indicates if the operation was successful.
-	*/
-	function premiumSaleDiscount(uint256 _weiAmount, uint256 basic_tokens)public pure returns (uint256){
-		uint256 discounted_token;
-
-		if(_weiAmount < 41.66*10**18){
-			discounted_token = basic_tokens*100/95; //5% discount
-		}else if(_weiAmount < 83.33*10**18){
-			discounted_token = basic_tokens*10/9; //10% discount
-		}else if(_weiAmount < 250*10**18){
-			discounted_token = basic_tokens*10/8; //20% discount
-		}else{
-			discounted_token = basic_tokens*10/6; //40% discount
-		}
-
-		return discounted_token;
-	}	
-	
-
-  	/**
-	* @dev Function to update token lockup time
-	* @return A bool that indicates if the operation was successful.
-	*/
-	function updateLockupTime(uint256 _newLockUpTime) onlyOwner public returns(bool){
-		require( _newLockUpTime > now );
-		return ownerMintableToken.updateLockupTime(_newLockUpTime);
-	}	
-
-	/**
-	* @dev called for get status of pause.
-	*/
-	function ispause() public view returns(bool){
-		return paused;
-	}
-
 }

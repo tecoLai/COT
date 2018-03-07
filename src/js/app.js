@@ -1,11 +1,8 @@
 App = {
   web3Provider: null,
   contracts: {},
-  ownerAccount:"",
 
-  init: function(owner_account) {
-
-    App.ownerAccount = owner_account;
+  init: function() {
     return App.initWeb3();
   },
 
@@ -45,7 +42,47 @@ App = {
 
         // Set the provider for our contract.
         App.contracts.COTCoin.setProvider(App.web3Provider);
-      })
+      }),
+      $.getJSON('../build/contracts/WhiteList.json', function(data) {
+
+        // Get the necessary contract artifact file and instantiate it with truffle-contract.
+      
+        var WhiteListArtifact = data;
+        App.contracts.WhiteList = TruffleContract(WhiteListArtifact);
+
+        // Set the provider for our contract.
+        App.contracts.WhiteList.setProvider(App.web3Provider);
+      }),
+      $.getJSON('../build/contracts/PausableToken.json', function(data) {
+
+        // Get the necessary contract artifact file and instantiate it with truffle-contract.
+      
+        var PausableTokenArtifact = data;
+        App.contracts.PausableToken = TruffleContract(PausableTokenArtifact);
+
+        // Set the provider for our contract.
+        App.contracts.PausableToken.setProvider(App.web3Provider);
+      }),
+      $.getJSON('../build/contracts/Lockup.json', function(data) {
+
+        // Get the necessary contract artifact file and instantiate it with truffle-contract.
+      
+        var LockupArtifact = data;
+        App.contracts.Lockup = TruffleContract(LockupArtifact);
+
+        // Set the provider for our contract.
+        App.contracts.Lockup.setProvider(App.web3Provider);
+      }),
+      $.getJSON('../build/contracts/OwnerAddressInfo.json', function(data) {
+
+        // Get the necessary contract artifact file and instantiate it with truffle-contract.
+      
+        var OwnerAddressInfoArtifact = data;
+        App.contracts.OwnerAddressInfo = TruffleContract(OwnerAddressInfoArtifact);
+
+        // Set the provider for our contract.
+        App.contracts.OwnerAddressInfo.setProvider(App.web3Provider);
+      })                        
 
     ).then(function(){
         App.getBalances();
@@ -79,10 +116,8 @@ App = {
     console.log('updating token locktime');
     $('#locktime_error').text('');
     $('#locktime_error_block').addClass("invisible");    
-    var COTCoinCrowdsaleInstance;
 
-    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-      COTCoinCrowdsaleInstance = instance;
+    App.contracts.Lockup.deployed().then(function(LockupInstance) {
 
       var new_lockup_time = $('#lock_time_input').val();
       var timestamp = new Date(new_lockup_time).getTime();
@@ -93,7 +128,7 @@ App = {
       }
       timestamp = timestamp / 1000;
       console.log(timestamp);
-      return COTCoinCrowdsaleInstance.updateLockupTime(timestamp);
+      return LockupInstance.updateLockup(timestamp);
 
     }).then(function(result){
       if(result != false){
@@ -111,23 +146,12 @@ App = {
     console.log('get token locktime');
     $('#locktime_error').text('');
     $('#locktime_error_block').addClass("invisible");    
-    var COTCoinCrowdsaleInstance;
 
-    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-      COTCoinCrowdsaleInstance = instance;
+    App.contracts.Lockup.deployed().then(function(LockupInstance) {
 
-      COTCoinCrowdsaleInstance.token().then(function(addr){
-        tokenAddress = addr;
-        return tokenAddress;
+      return LockupInstance.getLockup();
 
-      }).then(function(tokenAddress_data){
-
-        var COTCoinInstance;
-        COTCoinInstance = App.contracts.COTCoin.at(tokenAddress_data);
-
-        return COTCoinInstance.getLockupTime();
-
-      }).then(function(lockup_time_result){
+    }).then(function(lockup_time_result){
         var lockup_timestamp = lockup_time_result.toString(10);
         var timestamp = new Date(parseInt(lockup_timestamp)*1000);
         var year = timestamp.getFullYear();
@@ -140,12 +164,7 @@ App = {
         console.log(lockup_timestamp);
         $("#locktime_info").text(time);
 
-      }).catch(function(err) {
-        $('#locktime_error').text(err.message);
-        $('#locktime_error_block').removeClass("invisible");  
-      });
-
-    }).catch(function(err){
+      }).catch(function(err){
       $('#locktime_error').text(err.message);
       $('#locktime_error_block').removeClass("invisible");  
     });
@@ -155,12 +174,9 @@ App = {
   handleGetPauseStatus: function() {
 
     console.log('get pause status');
-    var COTCoinCrowdsaleInstance;
+    App.contracts.PausableToken.deployed().then(function(PausableTokenInstance) {
 
-    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-      COTCoinCrowdsaleInstance = instance;
-
-      return COTCoinCrowdsaleInstance.ispause();
+      return PausableTokenInstance.ispause();
 
     }).then(function(result){
         $( "#pause" ).hide();
@@ -181,10 +197,8 @@ App = {
     event.preventDefault();
     $( "#get-pause-status" ).hide();
     console.log('pausing sale');
-    var COTCoinCrowdsaleInstance;
-    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-      COTCoinCrowdsaleInstance = instance;
-      return COTCoinCrowdsaleInstance.pause();
+    App.contracts.PausableToken.deployed().then(function(PausableTokenInstance) {
+      return PausableTokenInstance.pause();
 
     }).then(function(result){
       console.log('sale pause!');
@@ -203,10 +217,8 @@ App = {
   handleUnPause: function(event) {
     event.preventDefault();
     console.log('starting sale');
-    var COTCoinCrowdsaleInstance;
-    App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-      COTCoinCrowdsaleInstance = instance;
-      return COTCoinCrowdsaleInstance.unpause();
+    App.contracts.PausableToken.deployed().then(function(PausableTokenInstance) {
+      return PausableTokenInstance.unpause();
 
     }).then(function(result){
       console.log('sale start!');
@@ -325,7 +337,7 @@ App = {
 
           console.log(whitelist_list);
 
-          App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+          App.contracts.WhiteList.deployed().then(function(instance) {
             WhiteListInstance = instance;
 
             for(var list_index = 0; list_index < whitelist_list.length; list_index ++ ){
@@ -382,7 +394,7 @@ App = {
 
           console.log(publicSale_whitelist_list);
 
-          App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+          App.contracts.WhiteList.deployed().then(function(instance) {
             WhiteListInstance = instance;
 
             for(var list_index = 0; list_index < publicSale_whitelist_list.length; list_index ++ ){
@@ -439,7 +451,7 @@ App = {
 
           console.log(premiumSale_whitelist_list);
 
-          App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+          App.contracts.WhiteList.deployed().then(function(instance) {
             WhiteListInstance = instance;
 
             for(var list_index = 0; list_index < premiumSale_whitelist_list.length; list_index ++ ){
@@ -478,7 +490,8 @@ App = {
       var account = accounts[0];
       
       var address = $('#address_input').val();
-      App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+
+      App.contracts.WhiteList.deployed().then(function(instance) {
         WhiteListInstance = instance;
         return WhiteListInstance.checkList(address);
       }).then(function(result) {
@@ -513,6 +526,7 @@ App = {
         fromBlock: 1,
         toBlock: 'latest'
       }).get(function (err, result) {
+        console.log(result);
         
 /*
         web3.eth.getTransactionCount("0x9ad8eecf9a3d5949af816c0b2d4f34c635bf093f", function(error, result){
@@ -593,67 +607,89 @@ App = {
       }
 
       var account = accounts[0];
+      var sale_owner;
+      var unsale_owner;
+      var OwnerAddressInfoInstance;
+
       console.log('Getting accounts...');
       console.log(accounts);
-      App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
-        COTCoinCrowdsaleInstance = instance;
 
-        //get contract address
-        $("#contractAddress").text(COTCoinCrowdsaleInstance.address);
+      App.contracts.OwnerAddressInfo.deployed().then(function(instance) {
+        OwnerAddressInfoInstance = instance;
+        return OwnerAddressInfoInstance.getSaleAddress();
+      }).then(function(getSaleAddress) {
 
-        COTCoinCrowdsaleInstance.token().then(function(addr){
-          tokenAddress = addr;
-          $("#tokenAddress").text(tokenAddress);
-          console.log('token address: '+tokenAddress);
-          return tokenAddress;
+        sale_owner = getSaleAddress.toString(10);
+        console.log('sale_owner',sale_owner);
+        return OwnerAddressInfoInstance.getUnsaleAddress();
+      }).then(function(getUnsaleAddress) {
+        unsale_owner = getUnsaleAddress.toString(10);
+        console.log('unsale_owner',unsale_owner);
+      }).then(function() {
+        App.contracts.COTCoinCrowdsale.deployed().then(function(instance) {
+          COTCoinCrowdsaleInstance = instance;
 
-        }).then(function(tokenAddress_data){
-            console.log('Getting balances...');
-            var COTCoinInstance;
-            COTCoinInstance = App.contracts.COTCoin.at(tokenAddress_data);
+          //get contract address
+          $("#contractAddress").text(COTCoinCrowdsaleInstance.address);
 
-            //get user balance
-            COTCoinInstance.balanceOf(account).then(function(balance_data){
-              balance = COTCoinInstance.totalSupply();
-              console.log(balance);
-              console.log('balance_data:');
-              console.log(balance_data);
-              return balance_data.toString(10);
+          COTCoinCrowdsaleInstance.token().then(function(addr){
+            tokenAddress = addr;
+            $("#tokenAddress").text(tokenAddress);
+            console.log('token address: '+tokenAddress);
+            return tokenAddress;
 
-            }).then(function(result){
-              console.log('balance: '+result);
-              balance =  web3.fromWei(result, "ether")
-              $('#TTBalance').text(balance);
-            }).catch(function(err) {
-              console.log(err.message);
-            });
+          }).then(function(tokenAddress_data){
+              console.log('Getting balances...');
+              var COTCoinInstance;
+              COTCoinInstance = App.contracts.COTCoin.at(tokenAddress_data);
 
-            //get owner remain balance
-            COTCoinInstance.balanceOf(App.ownerAccount).then(function(balance_data){
-              balance = COTCoinInstance.totalSupply();
-              console.log(balance);
-              console.log('balance_data:');
-              console.log(balance_data);
-              return balance_data.toString(10);
+              //get user balance
+              COTCoinInstance.balanceOf(account).then(function(balance_data){
+                balance = COTCoinInstance.totalSupply();
+                console.log(balance);
+                console.log('balance_data:');
+                console.log(balance_data);
+                return balance_data.toString(10);
 
-            }).then(function(result){
-              console.log('balance: '+result);
-              balance =  web3.fromWei(result, "ether")
-              $('#remainBalance').text(balance);
-            }).catch(function(err) {
-              console.log(err.message);
-            });
+              }).then(function(result){
+                console.log('balance: '+result);
+                balance =  web3.fromWei(result, "ether");
+                $('#TTBalance').text(balance);
+              }).catch(function(err) {
+                console.log(err.message);
+              });
+              
+              var sale_balance;
+              //get sale remain balance
+              COTCoinInstance.balanceOf(sale_owner).then(function(balance_data){
+                return balance_data.toString(10);
+              }).then(function(result){
+                sale_balance =  web3.fromWei(result, "ether");
+                 $('#saleRemainBalance').text(sale_balance);
+              }).catch(function(err) {
+                console.log(err.message);
+              });
 
-            //get sale remain balance
-            COTCoinInstance.remainSaleSupply().then(function(balance_data){
-              $('#saleRemainBalance').text(web3.fromWei(balance_data.toString(10), "ether"));
-            }).catch(function(err) {
-              console.log(err.message);
-            });
+              var unsale_balance;
+              //get owner remain balance
+              COTCoinInstance.balanceOf(unsale_owner).then(function(balance_data){
+                return balance_data.toString(10);
+              }).then(function(result){
+                //get unsale remain balance
+                unsale_balance =  web3.fromWei(result, "ether");
+              }).then(function(){
+                $('#remainBalance').text(parseInt(unsale_balance)+parseInt(sale_balance));
+              }).catch(function(err) {
+                console.log(err.message);
+              });
 
-        }).catch(function(err){
+          }).catch(function(err){
+            console.log(err.message);
+          });
+        }).catch(function(err) {
           console.log(err.message);
         });
+
       }).catch(function(err) {
         console.log(err.message);
       });
@@ -667,7 +703,6 @@ App = {
 $(function() {
   var dataTable ;
   $(window).load(function() {
-    var ownerAccount = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57";
-    App.init(ownerAccount);
+    App.init();
   });
 });

@@ -30,21 +30,19 @@ if( isNaN(timestamp)){
 
 timestamp = timestamp / 1000;
 
-var COTCoinCrowdsale = artifacts.require("./COTCoinCrowdsale.sol");
-var COTCoin = artifacts.require("./COTCoin.sol");
-module.exports = function(callback) {
-	//console.log('start to update locktime');
-	var COTCoinCrowdsaleInstance;
-	COTCoinCrowdsale.deployed().then(function(instance){
-		COTCoinCrowdsaleInstance = instance;
-		return COTCoinCrowdsaleInstance.updateLockupTime(timestamp);
-	}).then(function(result){
-		//console.log('update end');
-		console.log(result);
+var Lockup = artifacts.require("./Lockup.sol");
 
-	}).catch(function(err) {
-		console.log(err.message);
-	});
+module.exports = function(callback) {
+    Lockup.deployed().then(function(LockupInstance) {
+
+      return LockupInstance.updateLockup(timestamp);
+
+    }).then(function(result){
+      console.log(result);
+
+    }).catch(function(err){
+      console.log(err.message);
+    });
 }
 
 

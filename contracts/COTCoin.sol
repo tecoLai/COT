@@ -1,36 +1,43 @@
 pragma solidity ^0.4.18;
 
+import './Lockup.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import "zeppelin-solidity/contracts/token/MintableToken.sol";
 
 contract COTCoin is MintableToken{
 	using SafeMath for uint256;
 
+	Lockup public lockup;
+
 	string public constant name = 'CosplayToken';
 	string public constant symbol = 'COT';
 	uint8 public constant decimals = 18;
 
-	//セール期間に使えるCOT最大発行量
-	uint256 public _remainingSaleSupply;
+	//the default total tokens
+	//契約オーナー最初持っているトークン量、トークン最大発行量-10億個、default:1000000000
+	uint256 public constant _totalSupply = (10**9)*10**18; 
 
-	address public _owner;
+	address public _saleToken_owner;
+	address public _unsaleToken_owner;
 
-	//トークン交換できる解放時間
-	uint256 public _token_lockUp_release_time;
 
-	function COTCoin(address _ownerWallet, uint256 _totalSupply, uint256 _lockUp_release_time)public{
+	function COTCoin(address _saleToken_wallet, address _unsaleToken_wallet, address _lockUp_address)public{
 
-		_owner = _ownerWallet; 
+		lockup = Lockup(_lockUp_address);
+		
+		_saleToken_owner = _saleToken_wallet; 
 
-	    //トークンロックアップ時間設定
-	    _token_lockUp_release_time = _lockUp_release_time;
-
-		//send all of token to owner in the begining.
-		//最初的に、契約生成するときに全部トークンは契約オーナーに上げる
-		require(mint(_ownerWallet, _totalSupply));
+		_unsaleToken_owner = _unsaleToken_wallet;
 
 	    //40％量COTはセール期間に用
-	    _remainingSaleSupply = (_totalSupply*40/100);
+	    uint256 _remainingSaleSupply = (_totalSupply*40/100);
+
+		//send all of token to owner in the begining.
+		//最初的に、契約生成するときに40%トークンは契約オーナーに上げる
+		require(mint(_saleToken_wallet, _remainingSaleSupply));
+
+		//最初的に、契約生成するときに60%トークンは契約オーナーに上げる
+		require(mint(_unsaleToken_wallet, (_totalSupply-_remainingSaleSupply)));
 
 		//これ以上トークンを新規発行できないようにする。
 		finishMinting();
@@ -39,29 +46,24 @@ contract COTCoin is MintableToken{
 
   	/**
 	* @dev Function to sell token to other user
-	* @param _from The address that will give the tokens.
 	* @param _to The address that will receive the tokens.
 	* @param _value The token amount that token holding owner want to give user
 	* @return A uint256 that indicates if the operation was successful.
 	*/
-	function sellToken(address _from, address _to, uint256 _value) public returns (bool) {
+	function sellToken(address _to, uint256 _value)onlyOwner public returns (bool) {
 
 		require(_to != address(0));
 
-		require(_to != _from);
+		require(_to != _saleToken_owner);
 
-		require(balances[_from] > 0);
+		require(balances[_saleToken_owner] > 0);
 
-		require(_value <= balances[_from]);
+		require(_value <= balances[_saleToken_owner]);
 
-		require((_remainingSaleSupply.sub(_value)) >= 0);
 		// SafeMath.sub will throw if there is not enough balance.
 
 		//minus the holding tokens from owner
-		balances[_from] = balances[_from].sub(_value);
-
-		//使えるCOT最大発行量マイナス
-		_remainingSaleSupply = _remainingSaleSupply.sub(_value);
+		balances[_saleToken_owner] = balances[_saleToken_owner].sub(_value);
 
 		//plus the holding tokens to buyer
 		//トークンを購入したいユーザーはトークンをプラス
@@ -82,8 +84,8 @@ contract COTCoin is MintableToken{
 		require(_value <= balances[msg.sender]);
 
 		//オーナー以外の人たちはトークン交換できる解放時間後で、交換できます
-		if(msg.sender != _owner){
-			require(now >= _token_lockUp_release_time);
+		if( ( msg.sender != _saleToken_owner ) && ( msg.sender != _unsaleToken_owner ) ){
+			require(lockup.isLockup());
 		}
 
 		// SafeMath.sub will throw if there is not enough balance.
@@ -93,32 +95,6 @@ contract COTCoin is MintableToken{
 
 		return true;
 	}
-
-  	/**
-	* @dev Function to check sale remain token
-	* @return A uint256 that indicates if the operation was successful.
-	*/
-	function remainSaleSupply() public view returns (uint256) {
-		return _remainingSaleSupply;
-	}
-
-  	/**
-	* @dev Function to update token lockup time
-	* @return A bool that indicates if the operation was successful.
-	*/
-	function updateLockupTime(uint256 _newLockUpTime) onlyOwner public returns(bool){
-
-		_token_lockUp_release_time = _newLockUpTime;
-
-		return true;
-	}
-
-  	/**
-	* @dev Function to get token lockup time
-	* @return A uint256 that indicates if the operation was successful.
-	*/
-	function getLockupTime() public view returns (uint256) {
-		return _token_lockUp_release_time;
-	}
+	
 }
 

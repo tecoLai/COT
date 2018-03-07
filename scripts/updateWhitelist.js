@@ -29,6 +29,8 @@ if(args['type'] == 'pre'){
 
 var COTCoinCrowdsale = artifacts.require("./COTCoinCrowdsale.sol");
 var COTCoin = artifacts.require("./COTCoin.sol");
+var WhiteList = artifacts.require("./WhiteList.sol");
+
 module.exports = function(callback) {
   
 var request = require('request'),
@@ -40,6 +42,9 @@ var request = require('request'),
 	    { url : url},
 	    function (error, response, body) {
 	    	try{
+
+	    		//body = '["0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef", "TESTTEST", "123456"]';
+
 		    	//get whitelist from api
 				var whitelist = JSON.parse(body);
 
@@ -48,14 +53,14 @@ var request = require('request'),
 					whitelist_list.push(whitelist.slice(index,index+100));
 				}
 
-				var COTCoinCrowdsaleInstance;
-				COTCoinCrowdsale.deployed().then(function(instance) {
-				COTCoinCrowdsaleInstance = instance;
+				var WhiteListInstance;
+				WhiteList.deployed().then(function(instance) {
+				WhiteListInstance = instance;
 
 				for(var list_index = 0; list_index < whitelist_list.length; list_index ++ ){
 				  var importing_data = whitelist_list[list_index];
-				  COTCoinCrowdsaleInstance.importList(whitelist_list[list_index], type).then(function(result){
-				    console.log(result);
+				  WhiteListInstance.importList(whitelist_list[list_index], type).then(function(result){
+				    console.log('success');
 				  }).catch(function(err) {
 				    console.log(err.message);
 				  });
