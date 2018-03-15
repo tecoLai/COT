@@ -13,7 +13,7 @@ App = {
       web3 = new Web3(App.web3Provider);
     } else {
       // set the provider you want from Web3.providers
-      App.web3Provider = new Web3.providers.HttpProvider('http://localhost:8545');
+      App.web3Provider = new Web3.providers.HttpProvider('https://mainnet.infura.io/teiJTlGBphLqKMGfFz5J');
       web3 = new Web3(App.web3Provider);
     }
 
