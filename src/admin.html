@@ -9,6 +9,7 @@
 
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="//cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css" rel="stylesheet">
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -30,12 +31,10 @@
       <div class="panel with-nav-tabs panel-default">
         <div class="panel-heading">
           <ul class="nav nav-tabs">
-
             <li class="active"><a href="#tokenBalance" data-toggle="tab">Token balance</a></li>
             <li><a href="#tokenHistory" data-toggle="tab">Token history</a></li>
             <li><a href="#saleStatus" data-toggle="tab">Sale status</a></li>
             <li><a href="#lockupTimeInfo" data-toggle="tab">Lockup time info</a></li>
-
             <li class="dropdown">
               <a href="#" data-toggle="dropdown">Whitelist <span class="caret"></span></a>
               <ul class="dropdown-menu" role="menu">
@@ -45,6 +44,7 @@
                 <li><a href="#publicSaleWhitelistInfo" data-toggle="tab">Import public sale</a></li>
               </ul>
             </li>
+            <li><a href="#transferToken" data-toggle="tab">Transfer token</a></li>
           </ul>
         </div>
         <div class="panel-body">
@@ -59,8 +59,9 @@
                   <h4>Balance</h4>
                   <strong>token remain Balance</strong>: <span id="remainBalance"></span> COT<br/><br/>
                   <strong>Sale token remain Balance</strong>: <span id="saleRemainBalance"></span> COT<br/><br/>
+                  <strong>Unsale token remain Balance</strong>: <span id="unsaleRemainBalance"></span> COT<br/><br/>
                   <strong>Holding Balance</strong>: <span id="TTBalance"></span> COT<br/><br/>
-                  <button type="button" class="btn btn-primary" id="update-balance">
+                  <button type="button" class="btn btn-primary js-update-balance" id="update-balance">
                     <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
                   </button>                     
                 </div>
@@ -68,15 +69,15 @@
             </div>
             <div class="tab-pane fade" id="tokenHistory">
               <div class="row">
-                <div class="col-sm-12 text-center">
+                <div class="col-sm-12 table-responsive text-center">
                   <h4>Token History</h4>
-                  <span id="tokenAddress"></span>
-                  <button type="button" class="btn btn-primary" id="check-history">
+                  <button type="button" class="btn btn-primary" id="check-token-history" >
                     <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
                   </button>
-                  <table class="table table-hover" id="token_history_table">
-                    <thead>
+                  <table class="table table-hover" id="token_history_table" style="width:100%" >
+                    <thead id="token_history_thead">
                       <tr>
+                        <th>No</th>
                         <th>Time</th>
                         <th>From</th>
                         <th>To</th>
@@ -200,6 +201,49 @@
                     <h4 class="alert-heading">Error</h4>
                     <p id="publicSaleWhitelistInfo_error"></p>
                   </div>  
+                </div>
+              </div> 
+            </div>
+            <div class="tab-pane fade" id="transferToken">
+              <div class="row">
+                <div class="col-sm-12 text-center">
+                  <h4>Transfer token</h4>
+                  <div class="col-sm-12">
+                    <hr>
+                    <h4>holding token</h4>
+                    <div class="col-sm-6 col-sm-offset-3">
+                      <span id="holdingBalance"></span> COT<br/><br/>    
+                    </div>
+                    <div class="col-sm-6 col-sm-offset-3">
+                      <button type="button" class="btn btn-primary js-update-balance" id="update-balance-in-transfer-page">
+                        <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+                      </button>  
+                    </div>
+                  </div>                  
+                  <div class="col-sm-12">
+                    <hr>
+                    <h4>address</h4>
+                    <div class="col-sm-6 col-sm-offset-3">
+                      <input type="text" class="form-control" id="WantToSendAddress" placeholder="please enter user address">    
+                    </div> 
+                  </div>
+                  <div class="col-sm-12">
+                    <h4>token</h4>
+                    <div class="col-sm-6 col-sm-offset-3">
+                      <input type="text" class="form-control" id="WantToSendTokenAmount" placeholder="how many token want to transfer" />
+                    </div>  
+                  </div>
+                  <div class="col-sm-12">
+                    <hr> 
+                    <button class="btn btn-primary" id="transferTokenButton" type="button">Transfer</button>
+                    <hr> 
+                  </div>
+                  <div class="col-sm-12">
+                    <div class="alert alert-success invisible" id="transfer_block" role="alert">
+                      <h4 class="alert-heading">Transfer result</h4>
+                      <p id="transfer_result"></p>
+                    </div>
+                  </div>
                 </div>
               </div> 
             </div>
